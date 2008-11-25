@@ -20,6 +20,18 @@ Authors
 --------------------------
   Gregory Haskins <ghaskins@novell.com>
 
+%package devel
+Summary:     XDS development files
+Group:       Development/Libraries
+AutoReqProv: on
+
+%description devel
+This component provides the development files for libvbus
+
+Authors
+--------------------------
+  Gregory Haskins <ghaskins@novell.com>
+
 %debug_package
 %prep
 %setup
@@ -35,6 +47,10 @@ make clean
 
 %files
 %defattr(-,root,root)
-%{libdir}/libvbus.so
+%{_libdir}/libvbus.so
+
+%files devel
+%defattr(-,root,root)
+/usr/include/vbus.hh
 
 %changelog

@@ -42,5 +42,5 @@ install: $(OUTPUT)
 	@mkdir -p $(INSTDIR)
 	cp $(OUTPUT) $(INSTDIR)
 	@mkdir -p $(PPREFIX)/include
-	cp ../include/xds.hh $(PPREFIX)/include
+	cp ../include/vbus.hh $(PPREFIX)/include
 
