@@ -1,22 +1,20 @@
 %define rpmrel _RPM_RELEASE
 
-BuildRequires: boost-devel ncurses-devel gcc-c++
+BuildRequires: boost-devel gcc-c++
 
-Summary: schedtop: displays scheduler statistics
-Name: schedtop
+Summary: libvbus - Userspace interface to kernel Virtual-Bus
+Name: libvbus
 Version: _RPM_VERSION
 License: GPL
 Release: %{rpmrel}
-Requires: boost ncurses
+Requires: boost
 Group: System
 Source: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 
 %description
-This utility will process statistics from /proc/schedstat such that the
-busiest stats will bubble up to the top.  It can alternately be sorted by
-the largest stat, or by name.  Stats can be included or excluded based on
-reg-ex pattern matching.
+Provides userspace access to the configfs/sysfs/procfs interfaces for
+the Virtual-Bus subsystem
 
 Authors
 --------------------------
@@ -37,6 +35,6 @@ make clean
 
 %files
 %defattr(-,root,root)
-/bin/schedtop
+%{libdir}/libvbus.so
 
 %changelog

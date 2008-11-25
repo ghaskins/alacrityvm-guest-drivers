@@ -1,47 +1,36 @@
-
-CFLAGS += -g -O0
 ARCH=$(shell uname -m)
 OBJDIR ?= obj/$(ARCH)
-LIBRARIES += -lboost_regex
-LIBRARIES += -lboost_program_options
-LIBRARIES += -lboost_filesystem
-LIBRARIES += -lncurses
-PREFIX ?= /usr/local
-NAME=schedtop
-INSTPATH=$(PREFIX)/bin
 
-VERSION=0.5
+NAME=libvbus
+VERSION=0.1
 RELEASE=1
 RPMBIN=$(OBJDIR)/$(NAME)-$(VERSION).tar.gz
 
-SRCS += $(shell find *.cc)
+SUBDIRS = lib
 
-OBJS = $(patsubst %.cc,$(OBJDIR)/%.o,$(SRCS))
+SUBDIRS:=$(strip $(SUBDIRS))
 
-OUTPUT = $(OBJDIR)/$(NAME)
+.PHONY: $(SUBDIRS)
 
-all: $(OUTPUT)
+all : $(SUBDIRS)
 
-$(OBJS): Makefile
+$(SUBDIRS):
+	cd $@ && $(MAKE)
 
-$(OUTPUT): $(OBJS)
+.PHONY: $(SUBDIRS:=-install)
 
-$(OBJDIR)/%.o: %.cc	Makefile
-	@echo "Compiling (C++) $< to $@"
-	@mkdir -p $(OBJDIR)
-	$(CXX) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+install : $(SUBDIRS:=-install)
 
-$(OBJDIR)/%:
-	@echo "Linking $@"
-	@mkdir -p $(OBJDIR)
-	$(CXX) $(CFLAGS) $(INCLUDES) -o $@ $(filter %.o %.a,$+) $(LIBDIR) $(LIBRARIES)
+$(SUBDIRS:=-install):
+	cd $(patsubst %-install,%,$@) && $(MAKE) install
 
-clean: 
-	@rm -f $(OBJDIR)/*
+.PHONY: clean
+.PHONY: $(SUBDIRS:=-clean)
 
-install: $(OUTPUT)
-	@mkdir -p $(INSTPATH)
-	cp -d $(OUTPUT) $(INSTPATH)
+clean : $(SUBDIRS:=-clean)
+
+$(SUBDIRS:=-clean):
+	cd $(patsubst %-clean,%,$@) && $(MAKE) clean
 
 $(OBJDIR)/$(NAME)-$(VERSION):
 	@mkdir -p $(OBJDIR)/$(NAME)-$(VERSION)
@@ -53,8 +42,9 @@ $(OBJDIR)/$(NAME)-$(VERSION)/$(NAME).spec: $(OBJDIR)/$(NAME)-$(VERSION) $(NAME).
 .PHONY: $(RPMBIN)
 
 $(RPMBIN): $(OBJDIR)/$(NAME)-$(VERSION)/$(NAME).spec 
-	tar -c --exclude=.git --exclude=*.spec --exclude=*~ --exclude=obj * | (cd $(OBJDIR)/$(NAME)-$(VERSION); tar xf -)
+	tar -c --exclude=.git --exclude=*~ --exclude=$(NAME).spec --exclude=test --exclude=obj * ../include/* | (cd $(OBJDIR)/$(NAME)-$(VERSION); tar xf -)
 	(cd $(OBJDIR); tar cvz $(NAME)-$(VERSION)) > $(RPMBIN)
 
 srcrpm: $(RPMBIN)
 	rpmbuild -ts $(RPMBIN)
+
