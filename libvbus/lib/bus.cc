@@ -125,7 +125,8 @@ void Impl::Bus::Register(const std::string &name, Driver::TypePtr type)
     m_typemap[name] = type;
     m_quiesce++;
 
-    boost::thread t(RefreshThread(name));
+    RefreshThread s(name);
+    boost::thread t(s);
 }
 
 void Driver::Type::Register(const std::string &name, Driver::TypePtr type)
