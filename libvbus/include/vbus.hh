@@ -18,6 +18,11 @@ namespace VBus {
 	virtual std::string Attr(const std::string &key) = 0;
 	virtual void Attr(const std::string &key,
 			  const std::string &val) = 0;
+
+	virtual void Call(unsigned long func,
+			  void *data,
+			  size_t len,
+			  unsigned long flags) = 0;
     };
     
     class Driver {

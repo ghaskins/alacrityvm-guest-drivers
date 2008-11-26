@@ -7,6 +7,10 @@ INCLUDES += -I../include
 OUTPUT=$(OBJDIR)/libvbus.so
 PREFIX ?= /usr/local
 
+ifneq ($(KERNEL_SRC), )
+INCLUDES += -I$(KERNEL_SRC)/include
+endif
+
 ifeq ($(COMPILE_ARCH), x86_64)
 LIBDIR = lib64
 else

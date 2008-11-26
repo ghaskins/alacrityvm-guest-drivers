@@ -9,6 +9,13 @@
 #include <boost/thread/thread.hpp>
 #include <boost/bind.hpp>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <linux/vbus.h>
+
 #include "privatevbus.hh"
 
 namespace fs = boost::filesystem;
@@ -54,6 +61,10 @@ Impl::Bus::Bus() :
     
     if (!fs::exists(m_path))
 	throw std::runtime_error("no virtual-bus connected");
+
+    m_fd = open("/dev/vbus", 0);
+    if (m_fd < 0)
+	throw Impl::ErrnoException("failed to open /dev/vbus");
     
     fs::directory_iterator end_iter;
     for ( fs::directory_iterator dev_iter(m_path + "/devices");
@@ -134,6 +145,38 @@ void Driver::Type::Register(const std::string &name, Driver::TypePtr type)
     g_bus.Register(name, type);
 }
 
+void Impl::Bus::Quiesce()
+{
+    Lock l(m_mutex);
+
+    while (m_quiesce)
+	m_cv.wait(l);
+}
+
+void Impl::Bus::Call(Device::Id id,
+		     unsigned long func,
+		     void *data,
+		     size_t len,
+		     unsigned long flags)
+{
+    struct vbus_call call;
+
+    call.dev = id;
+    call.func = func;
+    call.len = len;
+    call.datap = (__u64)data;
+    call.flags = flags;
+
+    int ret = ioctl(m_fd, VBUS_CALL, &call);
+    if (ret < 0)
+	throw Impl::ErrnoException("failed to complete ioctl");
+}
+
+void VBus::Quiesce()
+{
+    g_bus.Quiesce();
+}
+
 Impl::Device::Device(Id id, const std::string &path) :
     m_id(id), m_path(path)
 {
@@ -156,15 +199,12 @@ void Impl::Device::Attr(const std::string &key, const std::string &val)
     os << val;
 }
 
-void Impl::Bus::Quiesce()
+void Impl::Device::Call(unsigned long func,
+			void *data,
+			size_t len,
+			unsigned long flags)
 {
-    Lock l(m_mutex);
-
-    while (m_quiesce)
-	m_cv.wait(l);
+    g_bus.Call(m_id, func, data, len, flags);
 }
 
-void VBus::Quiesce()
-{
-    g_bus.Quiesce();
-}
+

@@ -1,6 +1,9 @@
 #ifndef __PRIVATE_VBUS_HH__
 #define __PRIVATE_VBUS_HH__
 
+#include <errno.h>
+#include <exception>
+
 #include <vbus.hh>
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
@@ -14,7 +17,26 @@ namespace VBus {
 	typedef boost::mutex                                     Mutex;
 	typedef boost::condition                                 CondVar;
 	typedef boost::detail::thread::scoped_lock<boost::mutex> Lock;
-	
+
+	class ErrnoString : public std::string
+	{
+	public:
+	    ErrnoString()
+		{
+		    std::ostringstream os;
+		    
+		    os << strerror(errno) << " (errno = " << errno << ")";
+		    assign(os.str());
+		}
+	};
+
+	class ErrnoException : public std::runtime_error
+	{
+	public:
+	    ErrnoException(std::string what) :
+		std::runtime_error(what + ": " + ErrnoString()) {}
+	};
+
 	class Device : public VBus::Device {
 	public:
 	    typedef unsigned long Id;
@@ -24,6 +46,11 @@ namespace VBus {
 	    std::string Attr(const std::string &key);
 	    void Attr(const std::string &key, const std::string &val);
 	    
+	    void Call(unsigned long func,
+		      void *data,
+		      size_t len,
+		      unsigned long flags);
+
 	    DriverPtr m_driver;
 
 	private:
@@ -38,6 +65,11 @@ namespace VBus {
 	    void Register(const std::string &name, VBus::Driver::TypePtr type);
 	    void Refresh(const std::string &name);
 	    void Quiesce();
+	    void Call(Device::Id id,
+		      unsigned long func,
+		      void *data,
+		      size_t len,
+		      unsigned long flags);
 
 	private:
 	    typedef std::map<std::string, VBus::Driver::TypePtr> TypeMap;
@@ -50,6 +82,7 @@ namespace VBus {
 	    DeviceMap m_devicemap;
 	    int m_quiesce;
 	    CondVar m_cv;
+	    int m_fd;
 	};
     };
 };
