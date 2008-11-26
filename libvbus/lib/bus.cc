@@ -40,7 +40,8 @@ static std::string ReadAttr(const std::string &path)
 }
 
 Impl::Bus::Bus() :
-    m_version(CastString<unsigned long>(ReadAttr("/sys/vbus/version")))
+    m_version(CastString<unsigned long>(ReadAttr("/sys/vbus/version"))),
+    m_quiesce(0)
 {
     if (m_version != 1) {
 	std::ostringstream os;
@@ -95,6 +96,10 @@ void Impl::Bus::Refresh(const std::string &name)
 	if (_dev->Attr("type") == name && _dev->m_driver == NULL) 
 	    _dev->m_driver = type->Probe(dev);
     }
+
+    m_quiesce--;
+    if (!m_quiesce)
+	m_cv.notify_all();
 }
 
 class RefreshThread {
@@ -117,7 +122,8 @@ void Impl::Bus::Register(const std::string &name, Driver::TypePtr type)
     if (m_typemap.find(name) != m_typemap.end())
 	throw std::runtime_error("driver " + name + " already registered");
 
-    m_typemap[name] = type;  
+    m_typemap[name] = type;
+    m_quiesce++;
 
     boost::thread t(RefreshThread(name));
 }
@@ -147,4 +153,17 @@ void Impl::Device::Attr(const std::string &key, const std::string &val)
 	throw std::runtime_error("could not open " + fqp);
 
     os << val;
+}
+
+void Impl::Bus::Quiesce()
+{
+    Lock l(m_mutex);
+
+    while (m_quiesce)
+	m_cv.wait(l);
+}
+
+void VBus::Quiesce()
+{
+    g_bus.Quiesce();
 }

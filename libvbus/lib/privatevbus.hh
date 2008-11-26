@@ -37,6 +37,7 @@ namespace VBus {
 
 	    void Register(const std::string &name, VBus::Driver::TypePtr type);
 	    void Refresh(const std::string &name);
+	    void Quiesce();
 
 	private:
 	    typedef std::map<std::string, VBus::Driver::TypePtr> TypeMap;
@@ -46,7 +47,9 @@ namespace VBus {
 	    unsigned long m_version;
 	    std::string m_path;
 	    TypeMap m_typemap;
-	    DeviceMap m_devicemap; 
+	    DeviceMap m_devicemap;
+	    int m_quiesce;
+	    CondVar m_cv;
 	};
     };
 };

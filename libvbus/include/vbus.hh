@@ -13,7 +13,7 @@ namespace VBus {
 
     class Device {
     public:
-	virtual ~Device() = 0;
+	virtual ~Device() {}
 
 	virtual std::string Attr(const std::string &key) = 0;
 	virtual void Attr(const std::string &key,
@@ -22,14 +22,14 @@ namespace VBus {
     
     class Driver {
     public:
-	virtual ~Driver() = 0;
+	virtual ~Driver() {}
 
 	class Type;
 	typedef boost::shared_ptr<Type> TypePtr;
 
 	class Type {
 	public:
-	    virtual ~Type() = 0;
+	    virtual ~Type() {}
 	    
 	    virtual DriverPtr Probe(DevicePtr device) = 0;
 
@@ -38,6 +38,8 @@ namespace VBus {
     
 	virtual void Remove() = 0;
     };
+
+    void Quiesce();
 };
 
 #endif // __VBUS_HH__
