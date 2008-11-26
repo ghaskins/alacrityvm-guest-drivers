@@ -2,51 +2,41 @@
 #define __VBUS_HH__
 
 #include <boost/shared_ptr.hpp>
-#include <boost/thread.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/condition.hpp>
-#include <boost/thread/detail/lock.hpp>
-#include <map>
 #include <string>
 
-namespace Virtual {
+namespace VBus {
 
-    typedef boost::mutex                                     Mutex;
-    typedef boost::condition                                 CondVar;
-    typedef boost::detail::thread::scoped_lock<boost::mutex> Lock;
-    
-    class Bus {
+    class Device;
+    class Driver;
+    typedef boost::shared_ptr<Device> DevicePtr;
+    typedef boost::shared_ptr<Driver> DriverPtr;
+
+    class Device {
     public:
-	Bus();
-	
-	class Device {
-	    friend class Bus;
+	virtual ~Device() = 0;
 
+	virtual std::string Attr(const std::string &key) = 0;
+	virtual void Attr(const std::string &key,
+			  const std::string &val) = 0;
+    };
+    
+    class Driver {
+    public:
+	virtual ~Driver() = 0;
+
+	class Type;
+	typedef boost::shared_ptr<Type> TypePtr;
+
+	class Type {
 	public:
-	    typedef unsigned long Id;
+	    virtual ~Type() = 0;
 	    
-	    Id GetId() { return m_id; }
+	    virtual DriverPtr Probe(DevicePtr device) = 0;
 
-	    std::string Attr(const std::string &key);
-	    void Attr(const std::string &key,
-		      const std::string &val);
-	    
-	    
-	private:
-	    Device(Id id, const std::string &path);
-	    
-	    Id           m_id;
-	    std::string  m_path;
+	    static void Register(const std::string &name, TypePtr type);
 	};
-	
-	typedef boost::shared_ptr<Device> DevicePtr;
-	
-    private:
-	typedef std::map<Device::Id, DevicePtr> DeviceMap;
-	
-	unsigned long m_version;
-	Mutex m_mutex;
-	DeviceMap m_devicemap; 
+    
+	virtual void Remove() = 0;
     };
 };
 
