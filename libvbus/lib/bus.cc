@@ -207,4 +207,9 @@ void Impl::Device::Call(unsigned long func,
     g_bus.Call(m_id, func, data, len, flags);
 }
 
+VBus::QueuePtr Impl::Device::Queue(unsigned long id, size_t ringsize)
+{
+    VBus::QueuePtr q(new Impl::Queue(id, ringsize));
 
+    return q;
+}
