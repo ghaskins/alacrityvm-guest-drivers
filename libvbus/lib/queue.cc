@@ -9,7 +9,8 @@ Impl::Queue::Descriptor::Descriptor(struct ioq_ring_desc *desc) :
     
 }
 
-void Impl::Queue::Descriptor::Set(Queue::Descriptor::BufferPtr buf)
+void Impl::Queue::Descriptor::Set(Queue::Descriptor::BufferPtr buf,
+				  Flags flags)
 {
     m_buf = buf;
 
@@ -79,17 +80,17 @@ Impl::Queue::~Queue()
     delete[] m_ring;
 }
 
-void Impl::Queue::Start()
+void Impl::Queue::Start(Flags flags)
 {
     
 }
 
-void Impl::Queue::Stop()
+void Impl::Queue::Stop(Flags flags)
 {
 
 }
 
-void Impl::Queue::Signal()
+void Impl::Queue::Signal(Flags flags)
 {
 
 }
@@ -125,7 +126,7 @@ bool Impl::Queue::Full(Queue::Index idx)
 }
 
 Queue::IteratorPtr
-Impl::Queue::Iterator(Queue::Index idx, unsigned long flags)
+Impl::Queue::Iterator(Queue::Index idx, Flags flags)
 {
     ValidateIndex(idx);
 
@@ -150,7 +151,8 @@ Impl::Queue::Iterator::Iterator(Queue *queue, Queue::Index idx, bool update) :
 }
 
 void Impl::Queue::Iterator::Seek(Queue::Iterator::SeekType type,
-				 long offset)
+				 long offset,
+				 Flags flags)
 {
     struct ioq_ring_head *head = m_queue->m_head;
     unsigned long pos;
@@ -180,7 +182,7 @@ void Impl::Queue::Iterator::Seek(Queue::Iterator::SeekType type,
     m_desc = (Impl::Queue::Descriptor*)&m_queue->m_ring[pos].cookie;
 }
 
-void Impl::Queue::Iterator::Push()
+void Impl::Queue::Iterator::Push(Flags flags)
 {
     struct ioq_ring_head *head = m_queue->m_head;
     int ret = -ENOSPC;
@@ -200,14 +202,14 @@ void Impl::Queue::Iterator::Push()
 	
 	MemoryBarrier();
 	
-	Seek(Queue::Iterator::ISEEK_NEXT, 0);
+	Seek(Queue::Iterator::ISEEK_NEXT, 0, 0);
 	
 	if (m_update)
-	    m_queue->Signal();
+	    m_queue->Signal(0);
     }
 }
 
-void Impl::Queue::Iterator::Pop()
+void Impl::Queue::Iterator::Pop(Flags flags)
 {
     struct ioq_ring_head *head = m_queue->m_head;
     
@@ -225,9 +227,9 @@ void Impl::Queue::Iterator::Pop()
 	
 	MemoryBarrier();
 	
-	Seek(Queue::Iterator::ISEEK_NEXT, 0);
+	Seek(Queue::Iterator::ISEEK_NEXT, 0, 0);
 	
 	if (m_update)
-	    m_queue->Signal();
+	    m_queue->Signal(0);
     }
 }

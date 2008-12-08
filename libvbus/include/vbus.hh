@@ -15,6 +15,8 @@ namespace VBus {
 
     void MemoryBarrier();
 
+    typedef unsigned long Flags;
+
     class Queue {
     public:
 	virtual ~Queue() {}
@@ -36,7 +38,7 @@ namespace VBus {
 		OWNER_SOUTH = 1,
 	    };
 
-	    virtual void Set(BufferPtr buf) = 0;
+	    virtual void Set(BufferPtr buf, Flags flags=0) = 0;
 	    virtual void Reset() = 0;
 	    virtual size_t Len() = 0;
 	    virtual void Owner(OwnerType) = 0;
@@ -58,9 +60,9 @@ namespace VBus {
 		ISEEK_SET,
 	    };
 
-	    virtual void Seek(SeekType type, long offset) = 0;
-	    virtual void Push() = 0;
-	    virtual void Pop() = 0;
+	    virtual void Seek(SeekType type, long offset, Flags flags=0) = 0;
+	    virtual void Push(Flags flags=0) = 0;
+	    virtual void Pop(Flags flags=0) = 0;
 	    virtual Descriptor *operator->() = 0;
 	};
 
@@ -71,14 +73,14 @@ namespace VBus {
 	    IDX_INUSE
 	};
 
-	virtual void Start() = 0;
-	virtual void Stop() = 0;
-	virtual void Signal() = 0;
+	virtual void Start(Flags flags=0) = 0;
+	virtual void Stop(Flags flags=0) = 0;
+	virtual void Signal(Flags flags=0) = 0;
 	virtual int Count(Index idx) = 0;
 	virtual bool Full(Index idx) = 0;
 	bool Empty(Index idx) { return Count(idx) == 0; }
 
-	virtual IteratorPtr Iterator(Index idx, unsigned long flags) = 0;
+	virtual IteratorPtr Iterator(Index idx, Flags flags=0) = 0;
     };
 
     class Device {
@@ -92,9 +94,11 @@ namespace VBus {
 	virtual void Call(unsigned long func,
 			  void *data,
 			  size_t len,
-			  unsigned long flags) = 0;
+			  Flags flags=0) = 0;
 
-	virtual QueuePtr Queue(unsigned long id, size_t ringsize) = 0;
+	virtual QueuePtr Queue(unsigned long id,
+			       size_t ringsize,
+			       Flags flags=0) = 0;
     };
     
     class Driver {
@@ -110,7 +114,9 @@ namespace VBus {
 	    
 	    virtual DriverPtr Probe(DevicePtr device) = 0;
 
-	    static void Register(const std::string &name, TypePtr type);
+	    static void Register(const std::string &name,
+				 TypePtr type,
+				 Flags flags=0);
 	};
     
 	virtual void Remove() = 0;

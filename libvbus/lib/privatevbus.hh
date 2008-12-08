@@ -50,7 +50,7 @@ namespace VBus {
 	    public:
 		Descriptor(struct ioq_ring_desc *desc);
 
-		void Set(VBus::Queue::Descriptor::BufferPtr buf);
+		void Set(VBus::Queue::Descriptor::BufferPtr buf, Flags flags);
 		void Reset();
 
 		size_t Len();
@@ -71,9 +71,10 @@ namespace VBus {
 			 VBus::Queue::Index type,
 			 bool update);
 
-		void Seek(VBus::Queue::Iterator::SeekType type, long offset);
-		void Push();
-		void Pop();
+		void Seek(VBus::Queue::Iterator::SeekType type, long offset,
+		    Flags flags);
+		void Push(Flags flags);
+		void Pop(Flags flags);
 		VBus::Queue::Descriptor *operator->() { return m_desc; }
 
 	    private:
@@ -84,14 +85,14 @@ namespace VBus {
 		bool                 m_update;
 	    };
 
-	    void Start();
-	    void Stop();
-	    void Signal();
+	    void Start(Flags flags);
+	    void Stop(Flags flags);
+	    void Signal(Flags flags);
 	    int Count(Index idx);
 	    int Count(struct ioq_ring_idx *idx);
 	    bool Full(Index idx);
 
-	    VBus::Queue::IteratorPtr Iterator(Index idx, unsigned long flags);
+	    VBus::Queue::IteratorPtr Iterator(Index idx, Flags flags);
 
 	private:
 	    struct ioq_ring_head  *m_head;
@@ -110,9 +111,11 @@ namespace VBus {
 	    void Call(unsigned long func,
 		      void *data,
 		      size_t len,
-		      unsigned long flags);
+		      Flags flags);
 
-	    VBus::QueuePtr Queue(unsigned long id, size_t ringsize);
+	    VBus::QueuePtr Queue(unsigned long id,
+				 size_t ringsize,
+				 Flags flags);
 
 	    DriverPtr m_driver;
 
@@ -125,14 +128,15 @@ namespace VBus {
 	public:
 	    Bus();
 
-	    void Register(const std::string &name, VBus::Driver::TypePtr type);
+	    void Register(const std::string &name,
+			  VBus::Driver::TypePtr type);
 	    void Refresh(const std::string &name);
 	    void Quiesce();
 	    void Call(Device::Id id,
 		      unsigned long func,
 		      void *data,
 		      size_t len,
-		      unsigned long flags);
+		      Flags flags);
 
 	private:
 	    typedef std::map<std::string, VBus::Driver::TypePtr> TypeMap;

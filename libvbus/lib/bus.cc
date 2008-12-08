@@ -140,7 +140,9 @@ void Impl::Bus::Register(const std::string &name, Driver::TypePtr type)
     boost::thread t(s);
 }
 
-void Driver::Type::Register(const std::string &name, Driver::TypePtr type)
+void Driver::Type::Register(const std::string &name,
+			    Driver::TypePtr type,
+			    Flags flags)
 {
     g_bus.Register(name, type);
 }
@@ -202,12 +204,14 @@ void Impl::Device::Attr(const std::string &key, const std::string &val)
 void Impl::Device::Call(unsigned long func,
 			void *data,
 			size_t len,
-			unsigned long flags)
+			Flags flags)
 {
     g_bus.Call(m_id, func, data, len, flags);
 }
 
-VBus::QueuePtr Impl::Device::Queue(unsigned long id, size_t ringsize)
+VBus::QueuePtr Impl::Device::Queue(unsigned long id,
+				   size_t ringsize,
+				   Flags flags)
 {
     VBus::QueuePtr q(new Impl::Queue(id, ringsize));
 
