@@ -128,20 +128,16 @@ bool Impl::Queue::Full(Queue::Index idx)
 }
 
 Queue::IteratorPtr
-Impl::Queue::Iterator(Queue::Index idx, Flags flags)
+Impl::Queue::IteratorCreate(Queue::Index idx, Flags flags)
 {
     ValidateIndex(idx);
     ValidateFlags(Queue::ITER_AUTO_UPDATE, flags);
 
     bool update(flags & Queue::ITER_AUTO_UPDATE);
 
-#if 0
     Queue::IteratorPtr iter(new Impl::Queue::Iterator(this, idx, update));
 
     return iter;
-#else
-    return Queue::IteratorPtr();
-#endif
 }
 
 

@@ -84,7 +84,7 @@ namespace VBus {
 	    ITER_AUTO_UPDATE = (1 << 0),
 	};
 
-	virtual IteratorPtr Iterator(Index idx, Flags flags=0) = 0;
+	virtual IteratorPtr IteratorCreate(Index idx, Flags flags=0) = 0;
     };
 
     class Device {

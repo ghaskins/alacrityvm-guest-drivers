@@ -92,7 +92,7 @@ namespace VBus {
 	    int Count(struct ioq_ring_idx *idx);
 	    bool Full(Index idx);
 
-	    VBus::Queue::IteratorPtr Iterator(Index idx, Flags flags);
+	    VBus::Queue::IteratorPtr IteratorCreate(Index idx, Flags flags);
 
 	private:
 	    struct ioq_ring_head  *m_head;
