@@ -163,15 +163,15 @@ void Impl::Bus::Call(Device::Id id,
 		     size_t len,
 		     unsigned long flags)
 {
-    struct vbus_call call;
+    struct vbus_devicecall args;
 
-    call.dev = id;
-    call.func = func;
-    call.len = len;
-    call.datap = (__u64)data;
-    call.flags = flags;
+    args.dev   = id;
+    args.func  = func;
+    args.len   = len;
+    args.datap = (__u64)data;
+    args.flags = flags;
 
-    int ret = ioctl(m_fd, VBUS_CALL, &call);
+    int ret = ioctl(m_fd, VBUS_DEVICECALL, &args);
     if (ret < 0)
 	throw Impl::ErrnoException("failed to complete ioctl");
 }
