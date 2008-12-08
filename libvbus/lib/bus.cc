@@ -81,7 +81,7 @@ Impl::Bus::Bus() :
     
 }
 
-static Impl::Bus g_bus;
+Impl::Bus g_bus;
 
 void Impl::Bus::Refresh(const std::string &name)
 {
@@ -157,23 +157,30 @@ void Impl::Bus::Quiesce()
 	m_cv.wait(l);
 }
 
-void Impl::Bus::Call(Device::Id id,
-		     unsigned long func,
-		     void *data,
-		     size_t len,
-		     unsigned long flags)
+int Impl::Bus::Ioctl(unsigned long func, void *args)
 {
-    struct vbus_devicecall args;
-
-    args.dev   = id;
-    args.func  = func;
-    args.len   = len;
-    args.datap = (__u64)data;
-    args.flags = flags;
-
-    int ret = ioctl(m_fd, VBUS_DEVICECALL, &args);
+    int ret = ioctl(m_fd, func, args);
     if (ret < 0)
 	throw Impl::ErrnoException("failed to complete ioctl");
+
+    return ret;
+}
+
+void Impl::Bus::Register(unsigned long id, Impl::Queue *q)
+{
+    Lock l(m_mutex);
+
+    if (m_queuemap.find(id) != m_queuemap.end())
+	throw std::runtime_error("queue already registered");
+
+    m_queuemap[id] = q;
+}
+
+void Impl::Bus::Unregister(Impl::Queue *q)
+{
+    Lock l(m_mutex);
+
+    m_queuemap.erase(q->Id());
 }
 
 void VBus::Quiesce()
@@ -210,7 +217,15 @@ void Impl::Device::Call(unsigned long func,
 {  
     ValidateFlags(0, flags);
 
-    g_bus.Call(m_id, func, data, len, flags);
+    struct vbus_devicecall args;
+
+    args.dev   = m_id;
+    args.func  = func;
+    args.len   = len;
+    args.datap = (__u64)data;
+    args.flags = flags;
+
+    g_bus.Ioctl(VBUS_DEVICECALL, &args);
 }
 
 VBus::QueuePtr Impl::Device::Queue(unsigned long id,
@@ -219,7 +234,7 @@ VBus::QueuePtr Impl::Device::Queue(unsigned long id,
 {
     ValidateFlags(0, flags);
 
-    VBus::QueuePtr q(new Impl::Queue(id, ringsize));
+    VBus::QueuePtr q(new Impl::Queue(m_id, id, ringsize));
 
     return q;
 }

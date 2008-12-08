@@ -1,4 +1,6 @@
 
+#include <linux/vbus.h>
+
 #include "privatevbus.hh"
 
 using namespace VBus;
@@ -51,7 +53,7 @@ Queue::Descriptor::BufferPtr Impl::Queue::Descriptor::operator->()
     return m_buf;
 }
 
-Impl::Queue::Queue(unsigned long id, size_t count)
+Impl::Queue::Queue(Device::Id devid, unsigned long qid, size_t count) : m_id(0)
 {
     m_head = (struct ioq_ring_head*)new char[sizeof(struct ioq_ring_head)];
 
@@ -73,11 +75,25 @@ Impl::Queue::Queue(unsigned long id, size_t count)
 	desc->cookie = (__u64)new Impl::Queue::Descriptor(desc);
     }
 
-    // FIXME: Register the queue, and set up signaling
+    struct vbus_queuecreate args;
+
+    args.devid = devid;
+    args.qid   = qid;
+    args.count = count;
+    args.flags = 0;
+    args.head  = (__u64)m_head;
+    args.ring  = (__u64)m_ring;
+
+    m_id = g_bus.Ioctl(VBUS_QUEUECREATE, &args);
+
+    g_bus.Register(m_id, this);
 }
 
 Impl::Queue::~Queue()
 {
+    if (m_id)
+	g_bus.Unregister(this);
+
     delete[] m_head;
     delete[] m_ring;
 }

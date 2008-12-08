@@ -43,8 +43,10 @@ namespace VBus {
 
 	class Queue : public VBus::Queue {
 	public:
-	    Queue(unsigned long id, size_t ringsize);
+	    Queue(unsigned long devid, unsigned long qid, size_t ringsize);
 	    ~Queue();
+
+	    typedef unsigned long Id_t;
 
 	    class Descriptor : public VBus::Queue::Descriptor {
 	    public:
@@ -91,10 +93,12 @@ namespace VBus {
 	    int Count(Index idx);
 	    int Count(struct ioq_ring_idx *idx);
 	    bool Full(Index idx);
+	    Id_t Id() { return m_id; }
 
 	    VBus::Queue::IteratorPtr IteratorCreate(Index idx, Flags flags);
 
 	private:
+	    Id_t                   m_id;
 	    struct ioq_ring_head  *m_head;
 	    struct ioq_ring_desc  *m_ring;
 	};
@@ -132,25 +136,28 @@ namespace VBus {
 			  VBus::Driver::TypePtr type);
 	    void Refresh(const std::string &name);
 	    void Quiesce();
-	    void Call(Device::Id id,
-		      unsigned long func,
-		      void *data,
-		      size_t len,
-		      Flags flags);
+	    int Ioctl(unsigned long func, void *data);
+
+	    void Register(unsigned long id, Impl::Queue *q);
+	    void Unregister(Impl::Queue *q);
 
 	private:
 	    typedef std::map<std::string, VBus::Driver::TypePtr> TypeMap;
 	    typedef std::map<Device::Id, VBus::DevicePtr> DeviceMap;
+	    typedef std::map<unsigned long, Impl::Queue*> QueueMap;
 	    
 	    Mutex m_mutex;
 	    unsigned long m_version;
 	    std::string m_path;
 	    TypeMap m_typemap;
 	    DeviceMap m_devicemap;
+	    QueueMap m_queuemap;
 	    int m_quiesce;
 	    CondVar m_cv;
 	    int m_fd;
 	};
+
+	extern Bus g_bus;
     };
 
     static inline void ValidateFlags(Flags allowed, Flags actual)
