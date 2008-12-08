@@ -144,6 +144,8 @@ void Driver::Type::Register(const std::string &name,
 			    Driver::TypePtr type,
 			    Flags flags)
 {
+    ValidateFlags(0, flags);
+
     g_bus.Register(name, type);
 }
 
@@ -205,7 +207,9 @@ void Impl::Device::Call(unsigned long func,
 			void *data,
 			size_t len,
 			Flags flags)
-{
+{  
+    ValidateFlags(0, flags);
+
     g_bus.Call(m_id, func, data, len, flags);
 }
 
@@ -213,6 +217,8 @@ VBus::QueuePtr Impl::Device::Queue(unsigned long id,
 				   size_t ringsize,
 				   Flags flags)
 {
+    ValidateFlags(0, flags);
+
     VBus::QueuePtr q(new Impl::Queue(id, ringsize));
 
     return q;

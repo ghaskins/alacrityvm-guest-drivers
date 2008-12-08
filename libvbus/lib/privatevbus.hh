@@ -152,6 +152,12 @@ namespace VBus {
 	    int m_fd;
 	};
     };
+
+    static inline void ValidateFlags(Flags allowed, Flags actual)
+    {
+	if (~allowed & actual)
+	    throw std::runtime_error("illegal flags");
+    }
 };
 
 #endif // __PRIVATE_VBUS_HH__

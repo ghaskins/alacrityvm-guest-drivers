@@ -12,6 +12,8 @@ Impl::Queue::Descriptor::Descriptor(struct ioq_ring_desc *desc) :
 void Impl::Queue::Descriptor::Set(Queue::Descriptor::BufferPtr buf,
 				  Flags flags)
 {
+    ValidateFlags(0, flags);
+
     m_buf = buf;
 
     if (m_desc->ptr != (__u64)m_buf->m_data)
@@ -82,17 +84,17 @@ Impl::Queue::~Queue()
 
 void Impl::Queue::Start(Flags flags)
 {
-    
+    ValidateFlags(0, flags);
 }
 
 void Impl::Queue::Stop(Flags flags)
 {
-
+    ValidateFlags(0, flags);
 }
 
 void Impl::Queue::Signal(Flags flags)
 {
-
+    ValidateFlags(0, flags);
 }
 
 static inline void ValidateIndex(Queue::Index idx)
@@ -129,6 +131,7 @@ Queue::IteratorPtr
 Impl::Queue::Iterator(Queue::Index idx, Flags flags)
 {
     ValidateIndex(idx);
+    ValidateFlags(0, flags);
 
 #if 0
     bool update(flags & AUTO_UPDATE);
@@ -154,6 +157,8 @@ void Impl::Queue::Iterator::Seek(Queue::Iterator::SeekType type,
 				 long offset,
 				 Flags flags)
 {
+    ValidateFlags(0, flags);
+
     struct ioq_ring_head *head = m_queue->m_head;
     unsigned long pos;
     
@@ -184,6 +189,8 @@ void Impl::Queue::Iterator::Seek(Queue::Iterator::SeekType type,
 
 void Impl::Queue::Iterator::Push(Flags flags)
 {
+    ValidateFlags(0, flags);
+
     struct ioq_ring_head *head = m_queue->m_head;
     int ret = -ENOSPC;
     
@@ -211,6 +218,8 @@ void Impl::Queue::Iterator::Push(Flags flags)
 
 void Impl::Queue::Iterator::Pop(Flags flags)
 {
+    ValidateFlags(0, flags);
+
     struct ioq_ring_head *head = m_queue->m_head;
     
     /*
