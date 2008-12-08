@@ -131,11 +131,11 @@ Queue::IteratorPtr
 Impl::Queue::Iterator(Queue::Index idx, Flags flags)
 {
     ValidateIndex(idx);
-    ValidateFlags(0, flags);
+    ValidateFlags(Queue::ITER_AUTO_UPDATE, flags);
+
+    bool update(flags & Queue::ITER_AUTO_UPDATE);
 
 #if 0
-    bool update(flags & AUTO_UPDATE);
-
     Queue::IteratorPtr iter(new Impl::Queue::Iterator(this, idx, update));
 
     return iter;
