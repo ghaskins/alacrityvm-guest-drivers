@@ -191,7 +191,20 @@ void VBus::Quiesce()
 Impl::Device::Device(Id id, const std::string &path) :
     m_id(id), m_path(path)
 {
+    struct vbus_deviceopen args;
 
+    args.devid = m_id;
+
+    g_bus.Ioctl(VBUS_DEVICEOPEN, &args);
+
+    m_handle = args.handle;
+}
+
+Impl::Device::~Device()
+{
+    try {
+	g_bus.Ioctl(VBUS_DEVICECLOSE, &m_handle);
+    } catch(...) {}
 }
 
 std::string Impl::Device::Attr(const std::string &key)
@@ -219,7 +232,7 @@ void Impl::Device::Call(unsigned long func,
 
     struct vbus_devicecall args;
 
-    args.dev   = m_id;
+    args.devh  = m_handle;
     args.func  = func;
     args.len   = len;
     args.datap = (__u64)data;
@@ -234,7 +247,7 @@ VBus::QueuePtr Impl::Device::Queue(unsigned long id,
 {
     ValidateFlags(0, flags);
 
-    VBus::QueuePtr q(new Impl::Queue(m_id, id, ringsize));
+    VBus::QueuePtr q(new Impl::Queue(m_handle, id, ringsize));
 
     return q;
 }

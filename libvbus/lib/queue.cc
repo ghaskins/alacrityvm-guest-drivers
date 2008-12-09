@@ -53,7 +53,8 @@ Queue::Descriptor::BufferPtr Impl::Queue::Descriptor::operator->()
     return m_buf;
 }
 
-Impl::Queue::Queue(Device::Id devid, unsigned long qid, size_t count) : m_id(0)
+Impl::Queue::Queue(Device::Handle devh, unsigned long qid, size_t count) :
+    m_id(0)
 {
     m_head = (struct ioq_ring_head*)new char[sizeof(struct ioq_ring_head)];
 
@@ -77,7 +78,7 @@ Impl::Queue::Queue(Device::Id devid, unsigned long qid, size_t count) : m_id(0)
 
     struct vbus_queuecreate args;
 
-    args.devid  = devid;
+    args.devh   = devh;
     args.qid    = qid;
     args.flags  = 0;
     args.head   = (__u64)m_head;

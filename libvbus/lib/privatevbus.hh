@@ -43,7 +43,7 @@ namespace VBus {
 
 	class Queue : public VBus::Queue {
 	public:
-	    Queue(unsigned long devid, unsigned long qid, size_t ringsize);
+	    Queue(__u64 devh, unsigned long qid, size_t ringsize);
 	    ~Queue();
 
 	    typedef unsigned long Id_t;
@@ -106,8 +106,10 @@ namespace VBus {
 	class Device : public VBus::Device {
 	public:
 	    typedef unsigned long Id;
+	    typedef __u64 Handle;
 
 	    Device(Id id, const std::string &path);
+	    virtual ~Device();
 	    
 	    std::string Attr(const std::string &key);
 	    void Attr(const std::string &key, const std::string &val);
@@ -125,6 +127,7 @@ namespace VBus {
 
 	private:
 	    Id m_id;
+	    Handle m_handle;
 	    std::string m_path;
 	};
 	
