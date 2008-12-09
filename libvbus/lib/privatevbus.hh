@@ -160,7 +160,6 @@ namespace VBus {
 	    int m_fd;
 	};
 
-	extern Bus g_bus;
     };
 
     static inline void ValidateFlags(Flags allowed, Flags actual)
@@ -169,5 +168,7 @@ namespace VBus {
 	    throw std::runtime_error("illegal flags");
     }
 };
+
+extern VBus::Impl::Bus g_bus;
 
 #endif // __PRIVATE_VBUS_HH__

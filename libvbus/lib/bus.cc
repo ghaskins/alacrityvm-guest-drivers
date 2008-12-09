@@ -81,8 +81,6 @@ Impl::Bus::Bus() :
     
 }
 
-Impl::Bus g_bus;
-
 void Impl::Bus::Refresh(const std::string &name)
 {
     Lock l(m_mutex);
@@ -251,3 +249,6 @@ VBus::QueuePtr Impl::Device::Queue(unsigned long id,
 
     return q;
 }
+
+VBus::Impl::Bus g_bus;
+
