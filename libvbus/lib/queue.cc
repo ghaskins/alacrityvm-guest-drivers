@@ -77,12 +77,12 @@ Impl::Queue::Queue(Device::Id devid, unsigned long qid, size_t count) : m_id(0)
 
     struct vbus_queuecreate args;
 
-    args.devid = devid;
-    args.qid   = qid;
-    args.count = count;
-    args.flags = 0;
-    args.head  = (__u64)m_head;
-    args.ring  = (__u64)m_ring;
+    args.devid  = devid;
+    args.qid    = qid;
+    args.count  = count;
+    args.flags  = 0;
+    args.head   = (__u64)m_head;
+    m_head->ptr = (__u64)m_ring;
 
     m_id = g_bus.Ioctl(VBUS_QUEUECREATE, &args);
 
