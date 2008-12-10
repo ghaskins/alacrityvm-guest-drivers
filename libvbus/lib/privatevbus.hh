@@ -46,7 +46,7 @@ namespace VBus {
 	    Queue(__u64 devh, unsigned long qid, size_t ringsize);
 	    ~Queue();
 
-	    typedef unsigned long Id_t;
+	    typedef __u64 Handle;
 
 	    class Descriptor : public VBus::Queue::Descriptor {
 	    public:
@@ -93,12 +93,13 @@ namespace VBus {
 	    int Count(Index idx);
 	    int Count(struct ioq_ring_idx *idx);
 	    bool Full(Index idx);
-	    Id_t Id() { return m_id; }
+
+	    Handle GetHandle() { return m_handle; }
 
 	    VBus::Queue::IteratorPtr IteratorCreate(Index idx, Flags flags);
 
 	private:
-	    Id_t                   m_id;
+	    Handle                 m_handle;
 	    struct ioq_ring_head  *m_head;
 	    struct ioq_ring_desc  *m_ring;
 	};
@@ -141,13 +142,13 @@ namespace VBus {
 	    void Quiesce();
 	    int Ioctl(unsigned long func, void *data);
 
-	    void Register(unsigned long id, Impl::Queue *q);
+	    void Register(__u64 handle, Impl::Queue *q);
 	    void Unregister(Impl::Queue *q);
 
 	private:
 	    typedef std::map<std::string, VBus::Driver::TypePtr> TypeMap;
 	    typedef std::map<Device::Id, VBus::DevicePtr> DeviceMap;
-	    typedef std::map<unsigned long, Impl::Queue*> QueueMap;
+	    typedef std::map<__u64, Impl::Queue*> QueueMap;
 	    
 	    Mutex m_mutex;
 	    unsigned long m_version;

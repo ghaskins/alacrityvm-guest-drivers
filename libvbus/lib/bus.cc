@@ -164,21 +164,21 @@ int Impl::Bus::Ioctl(unsigned long func, void *args)
     return ret;
 }
 
-void Impl::Bus::Register(unsigned long id, Impl::Queue *q)
+void Impl::Bus::Register(__u64 handle, Impl::Queue *q)
 {
     Lock l(m_mutex);
 
-    if (m_queuemap.find(id) != m_queuemap.end())
+    if (m_queuemap.find(handle) != m_queuemap.end())
 	throw std::runtime_error("queue already registered");
 
-    m_queuemap[id] = q;
+    m_queuemap[handle] = q;
 }
 
 void Impl::Bus::Unregister(Impl::Queue *q)
 {
     Lock l(m_mutex);
 
-    m_queuemap.erase(q->Id());
+    m_queuemap.erase(q->GetHandle());
 }
 
 void VBus::Quiesce()

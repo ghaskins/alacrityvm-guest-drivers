@@ -54,7 +54,7 @@ Queue::Descriptor::BufferPtr Impl::Queue::Descriptor::operator->()
 }
 
 Impl::Queue::Queue(Device::Handle devh, unsigned long qid, size_t count) :
-    m_id(0)
+    m_handle(0)
 {
     m_head = (struct ioq_ring_head*)new char[sizeof(struct ioq_ring_head)];
 
@@ -84,14 +84,16 @@ Impl::Queue::Queue(Device::Handle devh, unsigned long qid, size_t count) :
     args.head   = (__u64)m_head;
     m_head->ptr = (__u64)m_ring;
 
-    m_id = g_bus.Ioctl(VBUS_QUEUECREATE, &args);
+    g_bus.Ioctl(VBUS_QUEUECREATE, &args);
 
-    g_bus.Register(m_id, this);
+    m_handle = args.handle;
+
+    g_bus.Register(m_handle, this);
 }
 
 Impl::Queue::~Queue()
 {
-    if (m_id)
+    if (m_handle)
 	g_bus.Unregister(this);
 
     delete[] m_head;
@@ -111,6 +113,8 @@ void Impl::Queue::Stop(Flags flags)
 void Impl::Queue::Signal(Flags flags)
 {
     ValidateFlags(0, flags);
+
+    g_bus.Ioctl(VBUS_QUEUESIGNAL, &m_handle);
 }
 
 static inline void ValidateIndex(Queue::Index idx)
