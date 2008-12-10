@@ -103,11 +103,21 @@ Impl::Queue::~Queue()
 void Impl::Queue::Start(Flags flags)
 {
     ValidateFlags(0, flags);
+
+    struct ioq_irq *irq = &m_head->irq[Descriptor::OWNER_NORTH];
+
+    irq->enabled = 1;
+    MemoryBarrier();
 }
 
 void Impl::Queue::Stop(Flags flags)
 {
     ValidateFlags(0, flags);
+
+    struct ioq_irq *irq = &m_head->irq[Descriptor::OWNER_NORTH];
+
+    irq->enabled = 0;
+    MemoryBarrier();
 }
 
 void Impl::Queue::Signal(Flags flags)
