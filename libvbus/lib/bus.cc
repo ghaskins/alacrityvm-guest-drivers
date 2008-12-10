@@ -8,6 +8,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/bind.hpp>
+#include <boost/functional.hpp>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -46,6 +47,11 @@ static std::string ReadAttr(const std::string &path)
     return v;
 }
 
+static void SignalThread()
+{
+    g_bus.SignalThread();
+}
+
 Impl::Bus::Bus() :
     m_version(CastString<unsigned long>(ReadAttr("/sys/vbus/version"))),
     m_quiesce(0)
@@ -78,7 +84,33 @@ Impl::Bus::Bus() :
 
 	m_devicemap[id] = dev;
     }
-    
+
+    boost::thread t(::SignalThread);
+}
+
+void Impl::Bus::SignalThread()
+{
+    size_t defcount(512);
+    __u64 data[defcount];
+
+    while(1)
+    {
+	int ret;
+
+	ret = read(m_fd, &data, sizeof(data));
+	if (ret < 0)
+	    throw Impl::ErrnoException("failed to read signal data");
+
+	size_t count(ret/sizeof(__u64));
+
+	for (int i(0); i<count; i++)
+	{
+	    Lock l(m_mutex);
+	    __u64 handle(data[i]);
+
+	    std::cout << "rx signal for " << handle << std::endl;
+	}
+    }
 }
 
 void Impl::Bus::Refresh(const std::string &name)

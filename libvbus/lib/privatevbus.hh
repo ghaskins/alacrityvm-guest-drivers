@@ -144,6 +144,7 @@ namespace VBus {
 
 	    void Register(__u64 handle, Impl::Queue *q);
 	    void Unregister(Impl::Queue *q);
+	    void SignalThread();
 
 	private:
 	    typedef std::map<std::string, VBus::Driver::TypePtr> TypeMap;
