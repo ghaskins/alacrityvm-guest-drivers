@@ -124,7 +124,13 @@ void Impl::Queue::Signal(Flags flags)
 {
     ValidateFlags(0, flags);
 
-    g_bus.Ioctl(VBUS_QUEUESIGNAL, &m_handle);
+    struct ioq_irq *irq = &m_head->irq[Descriptor::OWNER_SOUTH];
+
+    irq->pending = 1;
+    MemoryBarrier();
+
+    if (irq->enabled)
+	g_bus.Ioctl(VBUS_QUEUESIGNAL, &m_handle);
 }
 
 static inline void ValidateIndex(Queue::Index idx)
@@ -170,6 +176,27 @@ Impl::Queue::IteratorCreate(Queue::Index idx, Flags flags)
     return iter;
 }
 
+void
+Impl::Queue::Wakeup()
+{
+    Lock l(m_mutex);
+
+    m_cv.notify_all();
+}
+
+void
+Impl::Queue::Wait()
+{
+    Lock l(m_mutex);
+
+    struct ioq_irq *irq = &m_head->irq[Descriptor::OWNER_NORTH];
+
+    while (!irq->pending)
+	m_cv.wait(l);
+
+    irq->pending = 0;
+    MemoryBarrier();
+}
 
 Impl::Queue::Iterator::Iterator(Queue *queue, Queue::Index idx, bool update) :
     m_queue(queue), m_update(update)

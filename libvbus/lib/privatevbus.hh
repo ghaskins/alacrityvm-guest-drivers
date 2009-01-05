@@ -94,11 +94,17 @@ namespace VBus {
 	    int Count(struct ioq_ring_idx *idx);
 	    bool Full(Index idx);
 
+	    void Wait();
+	    
+	    void Wakeup();
+
 	    Handle GetHandle() { return m_handle; }
 
 	    VBus::Queue::IteratorPtr IteratorCreate(Index idx, Flags flags);
 
 	private:
+	    Mutex                  m_mutex;
+	    CondVar                m_cv;
 	    Handle                 m_handle;
 	    struct ioq_ring_head  *m_head;
 	    struct ioq_ring_desc  *m_ring;

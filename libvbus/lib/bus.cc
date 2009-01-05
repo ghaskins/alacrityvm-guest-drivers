@@ -108,6 +108,8 @@ void Impl::Bus::SignalThread()
 	    Lock l(m_mutex);
 	    __u64 handle(data[i]);
 
+	    m_queuemap[handle]->Wakeup();
+
 	    std::cout << "rx signal for " << handle << std::endl;
 	}
     }

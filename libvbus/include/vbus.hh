@@ -80,6 +80,8 @@ namespace VBus {
 	virtual bool Full(Index idx) = 0;
 	bool Empty(Index idx) { return Count(idx) == 0; }
 
+	virtual void Wait() = 0;
+
 	enum { // Iterator-Flags
 	    ITER_AUTO_UPDATE = (1 << 0),
 	};
