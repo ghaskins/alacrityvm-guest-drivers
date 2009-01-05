@@ -52,7 +52,8 @@ namespace VBus {
 	    public:
 		Descriptor(struct ioq_ring_desc *desc);
 
-		void Set(VBus::Queue::Descriptor::BufferPtr buf, Flags flags);
+		void Buffer(VBus::Queue::Descriptor::BufferPtr buf, Flags flags);
+		VBus::Queue::Descriptor::BufferPtr Buffer();
 		void Reset();
 
 		size_t Len();
@@ -60,7 +61,8 @@ namespace VBus {
 		void Owner(VBus::Queue::Descriptor::OwnerType type);
 		VBus::Queue::Descriptor::OwnerType Owner();
 
-		VBus::Queue::Descriptor::BufferPtr operator->();
+		void Valid(bool val);
+		bool Valid();
 
 	    private:
 		struct ioq_ring_desc *m_desc;
@@ -77,7 +79,7 @@ namespace VBus {
 		    Flags flags);
 		void Push(Flags flags);
 		void Pop(Flags flags);
-		VBus::Queue::Descriptor *operator->() { return m_desc; }
+		VBus::Queue::Descriptor *Desc() { return m_desc; }
 
 	    private:
 		Queue               *m_queue;

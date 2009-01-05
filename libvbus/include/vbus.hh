@@ -38,12 +38,14 @@ namespace VBus {
 		OWNER_SOUTH = 1,
 	    };
 
-	    virtual void Set(BufferPtr buf, Flags flags=0) = 0;
+	    virtual void Buffer(BufferPtr buf, Flags flags=0) = 0;
+	    virtual BufferPtr Buffer() = 0;
 	    virtual void Reset() = 0;
 	    virtual size_t Len() = 0;
 	    virtual void Owner(OwnerType) = 0;
 	    virtual OwnerType Owner() = 0;
-	    virtual BufferPtr operator->() = 0;
+	    virtual void Valid(bool) = 0;
+	    virtual bool Valid() = 0;
 
 	protected:
 	    virtual ~Descriptor() {}
@@ -63,7 +65,7 @@ namespace VBus {
 	    virtual void Seek(SeekType type, long offset, Flags flags=0) = 0;
 	    virtual void Push(Flags flags=0) = 0;
 	    virtual void Pop(Flags flags=0) = 0;
-	    virtual Descriptor *operator->() = 0;
+	    virtual Descriptor *Desc() = 0;
 	};
 
 	typedef boost::shared_ptr<Iterator> IteratorPtr;

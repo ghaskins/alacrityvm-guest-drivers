@@ -11,8 +11,8 @@ Impl::Queue::Descriptor::Descriptor(struct ioq_ring_desc *desc) :
     
 }
 
-void Impl::Queue::Descriptor::Set(Queue::Descriptor::BufferPtr buf,
-				  Flags flags)
+void Impl::Queue::Descriptor::Buffer(Queue::Descriptor::BufferPtr buf,
+				     Flags flags)
 {
     ValidateFlags(0, flags);
 
@@ -23,6 +23,11 @@ void Impl::Queue::Descriptor::Set(Queue::Descriptor::BufferPtr buf,
 
     // This will set the length field, if necessary
     this->Reset();
+}
+
+Queue::Descriptor::BufferPtr Impl::Queue::Descriptor::Buffer()
+{
+    return m_buf;
 }
 
 void Impl::Queue::Descriptor::Reset()
@@ -48,9 +53,14 @@ Queue::Descriptor::OwnerType Impl::Queue::Descriptor::Owner()
 	Impl::Queue::Descriptor::OWNER_NORTH;
 }
 
-Queue::Descriptor::BufferPtr Impl::Queue::Descriptor::operator->()
+void Impl::Queue::Descriptor::Valid(bool val)
 {
-    return m_buf;
+    m_desc->valid = val ? 1 : 0;
+}
+
+bool Impl::Queue::Descriptor::Valid()
+{
+    return m_desc->valid;
 }
 
 Impl::Queue::Queue(Device::Handle devh, unsigned long qid, size_t count) :
