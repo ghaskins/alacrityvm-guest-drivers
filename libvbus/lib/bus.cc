@@ -115,12 +115,16 @@ void Impl::Bus::SignalThread()
     }
 }
 
+typedef std::list<DevicePtr> DevList;
+
 void Impl::Bus::Refresh(const std::string &name)
 {
-    Lock l(m_mutex);
     Driver::TypePtr type;
+    DevList devlist;
     
     {
+	Lock l(m_mutex);
+
 	TypeMap::iterator iter(m_typemap.find(name));
 	
 	if (iter == m_typemap.end())
@@ -128,17 +132,35 @@ void Impl::Bus::Refresh(const std::string &name)
 	
 	type = iter->second;
     }
+
+    {
+	Lock l(m_mutex);
+
+	for(DeviceMap::iterator iter(m_devicemap.begin());
+	    iter != m_devicemap.end();
+	    ++iter)
+	{
+	    DevicePtr dev(iter->second);
+	    Impl::Device *_dev(dynamic_cast<Impl::Device*>(dev.get()));
+	
+	    if (_dev->Attr("type") == name && _dev->m_driver == NULL) 
+		devlist.push_back(dev);
+	}
+    }
     
-    for(DeviceMap::iterator iter(m_devicemap.begin());
-	iter != m_devicemap.end();
+    for(DevList::iterator iter(devlist.begin());
+	iter != devlist.end();
 	++iter)
     {
-	DevicePtr dev(iter->second);
+	DevicePtr dev(*iter);
 	Impl::Device *_dev(dynamic_cast<Impl::Device*>(dev.get()));
-	
-	if (_dev->Attr("type") == name && _dev->m_driver == NULL) 
-	    _dev->m_driver = type->Probe(dev);
+
+	Lock l(_dev->m_mutex);
+
+	_dev->m_driver = type->Probe(dev);
     }
+
+    Lock l(m_mutex);
 
     m_quiesce--;
     if (!m_quiesce)

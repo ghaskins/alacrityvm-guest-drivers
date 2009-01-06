@@ -132,6 +132,7 @@ namespace VBus {
 				 size_t ringsize,
 				 Flags flags);
 
+	    Mutex m_mutex;
 	    DriverPtr m_driver;
 
 	private:
