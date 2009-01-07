@@ -75,8 +75,6 @@ namespace VBus {
 	    IDX_INUSE
 	};
 
-	virtual void Start(Flags flags=0) = 0;
-	virtual void Stop(Flags flags=0) = 0;
 	virtual void Signal(Flags flags=0) = 0;
 	virtual int Count(Index idx) = 0;
 	virtual bool Full(Index idx) = 0;

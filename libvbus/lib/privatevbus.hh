@@ -89,8 +89,6 @@ namespace VBus {
 		bool                 m_update;
 	    };
 
-	    void Start(Flags flags);
-	    void Stop(Flags flags);
 	    void Signal(Flags flags);
 	    int Count(Index idx);
 	    int Count(struct ioq_ring_idx *idx);

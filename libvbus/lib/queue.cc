@@ -114,26 +114,6 @@ Impl::Queue::~Queue()
     delete[] m_ring;
 }
 
-void Impl::Queue::Start(Flags flags)
-{
-    ValidateFlags(0, flags);
-
-    struct ioq_irq *irq = &m_head->irq[Descriptor::OWNER_NORTH];
-
-    irq->enabled = 1;
-    MemoryBarrier();
-}
-
-void Impl::Queue::Stop(Flags flags)
-{
-    ValidateFlags(0, flags);
-
-    struct ioq_irq *irq = &m_head->irq[Descriptor::OWNER_NORTH];
-
-    irq->enabled = 0;
-    MemoryBarrier();
-}
-
 void Impl::Queue::Signal(Flags flags)
 {
     ValidateFlags(0, flags);
@@ -205,11 +185,16 @@ Impl::Queue::Wait()
 
     struct ioq_irq *irq = &m_head->irq[Descriptor::OWNER_NORTH];
 
+    irq->enabled = 1;
+    MemoryBarrier();
+
     while (!irq->pending)
 	m_cv.wait(l);
 
-    irq->pending = 0;
+    irq->enabled = 0;
     MemoryBarrier();
+
+    irq->pending = 0;
 }
 
 Impl::Queue::Iterator::Iterator(Queue *queue, Queue::Index idx, bool update) :
