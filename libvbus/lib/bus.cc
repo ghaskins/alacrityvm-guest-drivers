@@ -47,11 +47,6 @@ static std::string ReadAttr(const std::string &path)
     return v;
 }
 
-static void SignalThread()
-{
-    g_bus.SignalThread();
-}
-
 Impl::Bus::Bus() :
     m_version(CastString<unsigned long>(ReadAttr("/sys/vbus/version"))),
     m_quiesce(0)
@@ -85,7 +80,8 @@ Impl::Bus::Bus() :
 	m_devicemap[id] = dev;
     }
 
-    boost::thread t(::SignalThread);
+    using namespace boost;
+    thread t(bind(mem_fn(&VBus::Impl::Bus::SignalThread), this));
 }
 
 void Impl::Bus::SignalThread()
