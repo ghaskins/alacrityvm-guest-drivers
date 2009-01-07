@@ -125,16 +125,14 @@ void Impl::Bus::Refresh(const std::string &name)
     {
 	Lock l(m_mutex);
 
-	TypeMap::iterator iter(m_typemap.find(name));
+	{
+	    TypeMap::iterator iter(m_typemap.find(name));
 	
-	if (iter == m_typemap.end())
-	    throw std::runtime_error("Could not refresh type " + name);
-	
-	type = iter->second;
-    }
-
-    {
-	Lock l(m_mutex);
+	    if (iter == m_typemap.end())
+		throw std::runtime_error("Could not refresh type " + name);
+	    
+	    type = iter->second;
+	}
 
 	for(DeviceMap::iterator iter(m_devicemap.begin());
 	    iter != m_devicemap.end();
@@ -143,7 +141,7 @@ void Impl::Bus::Refresh(const std::string &name)
 	    DevicePtr dev(iter->second);
 	    Impl::Device *_dev(dynamic_cast<Impl::Device*>(dev.get()));
 	
-	    if (_dev->Attr("type") == name && _dev->m_driver == NULL) 
+	    if (_dev->Attr("type") == name)
 		devlist.push_back(dev);
 	}
     }
@@ -157,7 +155,8 @@ void Impl::Bus::Refresh(const std::string &name)
 
 	Lock l(_dev->m_mutex);
 
-	_dev->m_driver = type->Probe(dev);
+	if (_dev->m_driver == NULL) 
+	    _dev->m_driver = type->Probe(dev);
     }
 
     Lock l(m_mutex);
