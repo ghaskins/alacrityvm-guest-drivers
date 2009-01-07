@@ -32,13 +32,17 @@ Queue::Descriptor::BufferPtr Impl::Queue::Descriptor::Buffer()
 
 void Impl::Queue::Descriptor::Reset()
 {
+    /*
+     * We only update len if it changed to avoid dirtying the cacheline
+     * unecessarily
+     */
     if (m_desc->len != m_buf->m_len)
 	m_desc->len = m_buf->m_len; 
 }
 
 size_t Impl::Queue::Descriptor::Len()
 {
-    return m_desc->alen;
+    return m_desc->len;
 }
 
 void Impl::Queue::Descriptor::Owner(Queue::Descriptor::OwnerType owner)
