@@ -11,13 +11,10 @@
 
 #define QLEN 32
 
-/*
- * This function represents the egress point of our fictitious stack
- */
-void RxPacket(VBus::Queue::Descriptor::BufferPtr buf, size_t len)
-{
-    std::cout << "rx packet of length " << len << std::endl;
-}
+class VEnetDriver;
+
+void RxPacket(VEnetDriver *dev, VBus::Queue::Descriptor::BufferPtr buf);
+
 
 /*
  * This class represents our per-descriptor buffer container
@@ -113,8 +110,13 @@ public:
 		       VBus::Queue::Descriptor::OWNER_SOUTH)
 		    m_rxq->Wait();
 
+		VBus::Queue::Descriptor::BufferPtr buf(iter->Desc()->Buffer());
+
+		/* Update the buffer's notion of length */
+		buf->m_len = iter->Desc()->Len();
+
 		/* Pass the buffer up to the stack */
-		RxPacket(iter->Desc()->Buffer(), iter->Desc()->Len());
+		RxPacket(this, buf);
 		VBus::MemoryBarrier();
 		
 		/* Grab a new buffer to put in the ring */
@@ -123,6 +125,75 @@ public:
 		/* Advance the in-use tail */
 		iter->Pop();
 	    }
+	}
+
+    int ReapTx()
+	{
+	    VBus::Queue::IteratorPtr iter;
+	    int count(0);
+
+	    /* We want to iterate on the tail of the valid index */
+	    iter = m_txq->IteratorCreate(VBus::Queue::IDX_VALID);
+
+	    iter->Seek(VBus::Queue::Iterator::ISEEK_TAIL, 0);
+
+	    for (;;)
+	    {
+		VBus::Queue::Descriptor *desc(iter->Desc());
+
+		if (desc->Owner() == VBus::Queue::Descriptor::OWNER_SOUTH)
+		    return count;
+
+		desc->Buffer(VBus::Queue::Descriptor::BufferPtr());
+		desc->Valid(false);
+
+		count++;
+	    }
+
+	}
+
+    void Tx(VBus::Queue::Descriptor::BufferPtr buf)
+	{
+	    VBus::Queue::IteratorPtr viter, uiter;
+
+	    /*
+	     * If the valid index is full, try to reap any posted buffers.
+	     * If that fails, we must block until the queue is ready
+	     */
+	    while(m_txq->Full(VBus::Queue::IDX_VALID) && !ReapTx())
+		m_txq->Wait();
+
+	    /*
+	     * We want to iterate on the head of both the "inuse" and "valid"
+	     * index
+	     */
+	    viter = m_rxq->IteratorCreate(VBus::Queue::IDX_VALID);
+	    uiter = m_rxq->IteratorCreate(VBus::Queue::IDX_INUSE);
+
+	    viter->Seek(VBus::Queue::Iterator::ISEEK_HEAD, 0);
+	    uiter->Seek(VBus::Queue::Iterator::ISEEK_HEAD, 0);
+
+	    /*
+	     * We simply put the BufferPtr right onto the ring.  We will get an
+	     * interrupt later when the data has been consumed and we can reap
+	     * the pointers at that time
+	     */
+	    VBus::Queue::Descriptor *desc(uiter->Desc());
+
+	    desc->Buffer(buf);
+	    VBus::MemoryBarrier();
+
+	    desc->Valid(true);
+	    desc->Owner(VBus::Queue::Descriptor::OWNER_SOUTH);
+	    
+	    /* Advance both indexes together */
+	    viter->Push();
+	    uiter->Push();
+	    
+	    /*
+	     * This will signal the south side to consume the packet
+	     */
+	    m_txq->Signal();
 	}
 
     /*
@@ -153,6 +224,20 @@ private:
     VBus::QueuePtr  m_txq;
     int             m_mtu;
 };
+
+/*
+ * This function represents the egress point of our fictitious stack
+ */
+void RxPacket(VEnetDriver *dev, VBus::Queue::Descriptor::BufferPtr buf)
+{
+    std::cout << "rx packet of length " << buf->m_len << std::endl;
+
+    /*
+     * Since this is a loopback, just turn around and transmit it right
+     * back to the same device
+     */
+    dev->Tx(buf);
+}
 
 /*
  * This Driver::Type class is registered with the bus so that we receive
