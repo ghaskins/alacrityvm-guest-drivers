@@ -79,7 +79,7 @@ namespace VBus {
 		    Flags flags);
 		void Push(Flags flags);
 		void Pop(Flags flags);
-		VBus::Queue::Descriptor *Desc() { return m_desc; }
+		VBus::Queue::Descriptor *Desc();
 
 	    private:
 		Queue               *m_queue;

@@ -247,7 +247,7 @@ void Impl::Queue::Iterator::Seek(Queue::Iterator::SeekType type,
 	throw std::runtime_error("illegal position");
     
     m_pos = pos;
-    m_desc = (Impl::Queue::Descriptor*)&m_queue->m_ring[pos].cookie;
+    m_desc = (Impl::Queue::Descriptor*)m_queue->m_ring[pos].cookie;
 }
 
 void Impl::Queue::Iterator::Push(Flags flags)
@@ -304,4 +304,9 @@ void Impl::Queue::Iterator::Pop(Flags flags)
 	if (m_update)
 	    m_queue->Signal(0);
     }
+}
+
+VBus::Queue::Descriptor *Impl::Queue::Iterator::Desc()
+{
+    return dynamic_cast<VBus::Queue::Descriptor*>(m_desc);
 }
