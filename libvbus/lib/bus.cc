@@ -91,22 +91,28 @@ void Impl::Bus::SignalThread()
 
     while(1)
     {
-	int ret;
-
-	ret = read(m_fd, &data, sizeof(data));
-	if (ret < 0)
-	    throw Impl::ErrnoException("failed to read signal data");
-
-	size_t count(ret/sizeof(__u64));
-
-	for (int i(0); i<count; i++)
-	{
-	    Lock l(m_mutex);
-	    __u64 handle(data[i]);
-
-	    m_queuemap[handle]->Wakeup();
-
-	    std::cout << "rx signal for " << handle << std::endl;
+	try {
+	    int ret;
+	    
+	    ret = read(m_fd, &data, sizeof(data));
+	    if (ret < 0)
+		throw Impl::ErrnoException("failed to read signal data");
+	    
+	    size_t count(ret/sizeof(__u64));
+	    
+	    for (int i(0); i<count; i++)
+	    {
+		Lock l(m_mutex);
+		__u64 handle(data[i]);
+		
+		m_queuemap[handle]->Wakeup();
+		
+		std::cout << "rx signal for " << handle << std::endl;
+	    }
+	}catch(std::exception &e) {
+	    std::cerr << "libvbus::SignalThread exception: "
+		      << e.what() << std::endl;
+	    exit(-1);
 	}
     }
 }
