@@ -11,11 +11,17 @@
 
 #define QLEN 32
 
+/*
+ * This function represents the egress point of our fictitious stack
+ */
 void RxPacket(VBus::Queue::Descriptor::BufferPtr buf, size_t len)
 {
     std::cout << "rx packet of length " << len << std::endl;
 }
 
+/*
+ * This class represents our per-descriptor buffer container
+ */
 class VEnetBuffer : public VBus::Queue::Descriptor::Buffer
 {
 public:
@@ -28,7 +34,10 @@ public:
     ~VEnetBuffer() { delete[] (char*)m_data; }
 };
 
-
+/*
+ * This class is instantiated whenever a new venet device is added to
+ * our bus
+ */
 class VEnetDriver : public VBus::Driver {
 public:
     VEnetDriver(VBus::DevicePtr dev) :
@@ -84,6 +93,9 @@ public:
 	    thread t(bind(mem_fn(&VEnetDriver::RxThread), this));
 	}
 
+    /*
+     * This function is launched as a thread to handle our RX notifications
+     */
     void RxThread()
 	{
 	    VBus::Queue::IteratorPtr iter;
@@ -113,6 +125,10 @@ public:
 	    }
 	}
 
+    /*
+     * This is called by libvbus if the device we are communicating with
+     * is removed from the bus
+     */
     void Remove()
 	{
 	    std::cout << "device removed" << std::endl;
@@ -138,6 +154,11 @@ private:
     int             m_mtu;
 };
 
+/*
+ * This Driver::Type class is registered with the bus so that we receive
+ * a Type::Probe() callback whenever a device of interest is discovered
+ * (or dynamically added) on our bus
+ */
 class VEnetType : public VBus::Driver::Type {
 public:
     VBus::DriverPtr Probe(VBus::DevicePtr dev)
