@@ -16,6 +16,7 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <linux/vbus.h>
+#include <linux/vbus_userspace.h>
 
 #include "privatevbus.hh"
 
@@ -106,8 +107,6 @@ void Impl::Bus::SignalThread()
 		__u64 handle(data[i]);
 		
 		m_queuemap[handle]->Wakeup();
-		
-		std::cout << "rx signal for " << handle << std::endl;
 	    }
 	}catch(std::exception &e) {
 	    std::cerr << "libvbus::SignalThread exception: "

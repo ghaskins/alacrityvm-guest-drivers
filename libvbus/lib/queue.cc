@@ -1,5 +1,6 @@
 
 #include <linux/vbus.h>
+#include <linux/vbus_userspace.h>
 
 #include "privatevbus.hh"
 
