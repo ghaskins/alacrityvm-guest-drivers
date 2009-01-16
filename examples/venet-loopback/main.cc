@@ -147,6 +147,8 @@ public:
 		desc->Buffer(VBus::Queue::Descriptor::BufferPtr());
 		desc->Valid(false);
 
+		iter->Pop();
+
 		count++;
 	    }
 
@@ -260,6 +262,9 @@ int main()
 	    VBus::Driver::Type::Register("virtual-ethernet",
 					 VBus::Driver::TypePtr(new VEnetType));
 
+	    /*
+	     * Wait for all current Probe() operations to complete
+	     */
 	    VBus::Quiesce();
 
 	    while(1) wait();
