@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vbus.hh>
 
+#include <asm/types.h>
 #include <linux/venet.h>
 
 #define QLEN 32
@@ -250,8 +251,10 @@ class VEnetType : public VBus::Driver::Type {
 public:
     VBus::DriverPtr Probe(VBus::DevicePtr dev)
 	{
-	    VBus::DriverPtr drv(new VEnetDriver(dev));
+	    dev->Open(VENET_VERSION);
 
+	    VBus::DriverPtr drv(new VEnetDriver(dev));
+	    
 	    return drv;
 	}
 };

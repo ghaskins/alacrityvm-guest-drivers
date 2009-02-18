@@ -7,7 +7,6 @@ Name: libvbus
 Version: _RPM_VERSION
 License: GPL
 Release: %{rpmrel}
-Requires: boost
 Group: System
 Source: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-root

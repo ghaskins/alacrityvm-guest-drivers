@@ -9,7 +9,7 @@
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition.hpp>
-#include <boost/thread/detail/lock.hpp>
+#include <boost/thread/locks.hpp>
 #include <map>
 
 #include <asm/types.h>
@@ -18,9 +18,9 @@
 namespace VBus {
     namespace Impl {
 
-	typedef boost::mutex                                     Mutex;
-	typedef boost::condition                                 CondVar;
-	typedef boost::detail::thread::scoped_lock<boost::mutex> Lock;
+	typedef boost::mutex                     Mutex;
+	typedef boost::condition                 CondVar;
+	typedef boost::unique_lock<boost::mutex> Lock;
 
 	class ErrnoString : public std::string
 	{
@@ -120,7 +120,8 @@ namespace VBus {
 	    
 	    std::string Attr(const std::string &key);
 	    void Attr(const std::string &key, const std::string &val);
-	    
+
+	    void Open(unsigned int version, Flags flags);
 	    void Call(unsigned long func,
 		      void *data,
 		      size_t len,

@@ -243,15 +243,9 @@ void VBus::Quiesce()
 }
 
 Impl::Device::Device(Id id, const std::string &path) :
-    m_id(id), m_path(path)
+  m_id(id), m_path(path), m_handle(0)
 {
-    struct vbus_deviceopen args;
 
-    args.devid = m_id;
-
-    g_bus.Ioctl(VBUS_DEVICEOPEN, &args);
-
-    m_handle = args.handle;
 }
 
 Impl::Device::~Device()
@@ -275,6 +269,20 @@ void Impl::Device::Attr(const std::string &key, const std::string &val)
 	throw std::runtime_error("could not open " + fqp);
 
     os << val;
+}
+
+void Impl::Device::Open(unsigned int version, Flags flags)
+{
+    ValidateFlags(0, flags);
+
+    struct vbus_deviceopen args;
+
+    args.devid = m_id;
+    args.version = version;
+
+    g_bus.Ioctl(VBUS_DEVICEOPEN, &args);
+
+    m_handle = args.handle;
 }
 
 void Impl::Device::Call(unsigned long func,

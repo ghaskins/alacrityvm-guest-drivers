@@ -97,6 +97,8 @@ namespace VBus {
 	virtual void Attr(const std::string &key,
 			  const std::string &val) = 0;
 
+        virtual void Open(unsigned int version, Flags flags=0) = 0;
+
 	virtual void Call(unsigned long func,
 			  void *data,
 			  size_t len,
