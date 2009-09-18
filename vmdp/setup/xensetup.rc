@@ -1,0 +1,650 @@
+/*****************************************************************************
+ *
+ *   File Name:      xensetup.rc
+ *   Created by:     WTT
+ *   Date created:   01/26/07
+ *
+ *   %version:       26 %
+ *   %derived_by:    kallan %
+ *   %date_modified: Wed Jul 15 09:40:31 2009 %
+ *
+ *****************************************************************************/
+/*****************************************************************************
+ *                                                                           *
+ * Copyright (C) Unpublished Work of Novell, Inc. All Rights Reserved.       *
+ *                                                                           *
+ * THIS WORK IS AN UNPUBLISHED WORK AND CONTAINS CONFIDENTIAL, PROPRIETARY   *
+ * AND TRADE SECRET INFORMATION OF NOVELL, INC. ACCESS TO THIS WORK IS       *
+ * RESTRICTED TO (I) NOVELL, INC. EMPLOYEES WHO HAVE A NEED TO KNOW HOW TO   *
+ * PERFORM TASKS WITHIN THE SCOPE OF THEIR ASSIGNMENTS AND (II) ENTITIES     *
+ * OTHER THAN NOVELL, INC. WHO HAVE ENTERED INTO APPROPRIATE LICENSE         *
+ * AGREEMENTS. NO PART OF THIS WORK MAY BE USED, PRACTICED, PERFORMED,       *
+ * COPIED, DISTRIBUTED, REVISED, MODIFIED, TRANSLATED, ABRIDGED, CONDENSED,  *
+ * EXPANDED, COLLECTED, COMPILED, LINKED, RECAST, TRANSFORMED OR ADAPTED     *
+ * WITHOUT THE PRIOR WRITTEN CONSENT OF NOVELL, INC. ANY USE OR EXPLOITATION *
+ * OF THIS WORK WITHOUT AUTHORIZATION COULD SUBJECT THE PERPETRATOR TO       *
+ * CRIMINAL AND CIVIL LIABILITY.                                             *
+ *                                                                           *
+ *****************************************************************************/
+/*****************************************************************************
+ *
+ * Resources used by the Novell Virtual Machine Driver Pack	Setup
+ *
+ *****************************************************************************/
+
+#include <windows.h>
+#include <ntverp.h>
+#include <win_version.h>
+#include <xensetup.h>
+
+
+#define VER_INTERNALNAME_STR        "setup.exe"
+#define VER_ORIGINALFILENAME_STR    "setup.exe"
+
+#define VER_FILEVERSION             2,0,0,0009
+#define VER_FILEVERSION_STR         "2.0.0.0009\0"
+
+#undef VER_PRODUCTVERSION
+#define VER_PRODUCTVERSION          PV_PRODUCTVERSION
+
+#undef VER_PRODUCTVERSION_STR
+#define VER_PRODUCTVERSION_STR      PV_PRODUCTVERSION_STR
+
+#undef VER_COMPANYNAME_STR
+#define VER_COMPANYNAME_STR         VIRT_COMPANYNAME_STR
+
+#undef VER_FILEDESCRIPTION_STR
+#undef VER_PRODUCTNAME_STR
+
+#define VER_FILETYPE                VFT_APP
+#define VER_FILESUBTYPE             VFT2_DRV_SYSTEM
+
+/* Strings to be translated */
+
+/* English (U.S.) resources */
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+#undef VER_LEGALCOPYRIGHT_STR
+#undef VER_FILEDESCRIPTION_STR
+#undef VER_PRODUCTNAME_STR
+
+#define VER_LEGALCOPYRIGHT_STR      "Copyright \251 2007-2009 Novell, Inc. All rights reserved.", "\0"
+
+/* Windows 2000 */
+#ifdef TARGET_OS_Win2K
+#define VER_FILEDESCRIPTION_STR     "SUSE Driver Setup for Windows 2000 on Xen"
+#define VER_PRODUCTNAME_STR         "SUSE Drivers for Windows 2000 (32-bit) on Xen"
+
+/* Windows XP 32 bit  */
+#elif defined TARGET_OS_WinXP
+#define VER_FILEDESCRIPTION_STR     "SUSE Driver Setup for Windows XP on Xen"
+#define VER_PRODUCTNAME_STR         "SUSE Drivers for Windows XP (32-bit) on Xen"
+
+/* Windows 2003 32 bit, Windows 2003 64 bit, and XP 64 bit */
+#elif defined TARGET_OS_WinNET
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "SUSE Driver Setup for Windows Server 2003 on Xen"
+#define VER_PRODUCTNAME_STR         "SUSE Drivers for Windows Server 2003 (32-bit) on Xen"
+#else
+#define VER_FILEDESCRIPTION_STR     "SUSE Driver Setup for Windows XP/Server 2003 on Xen"
+#define VER_PRODUCTNAME_STR         "SUSE Drivers for Windows XP and Windows Server 2003 (64-bit) on Xen"
+#endif
+
+/* Windows Vista and Windows 2008 */
+#elif defined TARGET_OS_WinLH
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "SUSE Driver Setup for Windows Vista/Server 2008 on Xen"
+#define VER_PRODUCTNAME_STR         "SUSE Drivers for Windows Vista and Windows Server 2008 (32-bit) on Xen"
+#else
+#define VER_FILEDESCRIPTION_STR     "SUSE Driver Setup for Windows Vista/Server 2008 on Xen"
+#define VER_PRODUCTNAME_STR         "SUSE Drivers for Windows Vista and Windows Server 2008 (64-bit) on Xen"
+#endif
+#endif
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+	MBOX_TITLE	"SUSE Drivers for Windows on Xen Installation"
+
+	MBOX_UPDATE_TEXT	"We are unable to remove the boot storage device to perform the upgrade.\n\nPlease run the uninstall utility (Program Files/Novell/XenDrv/uninstall.exe) and\nthen install the new driver pack to perform the upgrade."
+
+	MBOX_FILE_CLEANUP_TEXT  "Setup was unable to remove some files and directories 
+									because they are in use. They will be removed when the 
+									system is rebooted.\n"
+
+	MBOX_XENBUS_FAILURE_TEXT  "Setup was unable to install the Xenbus driver and has terminated the installation.\n"
+
+	MBOX_DOING_UNINSTALL_TEXT  "Uninstall has not completed.  Please reboot and run setup again.\n"
+    MBOX_SETUP_HELP	"usage: setup [/auto_reboot | /no_reboot] [/eula_accepted] [/force] [/?]"
+    MBOX_NON_MATCHING_OS "setup.exe does not match the Windows version or processor architecture."
+    MBOX_UNSUPPORTED_OS "SUSE Drivers for Windows on Xen is not supported on this version of Windows."
+    MBOX_SETUP_RUNNING "Setup is already running."  
+
+END
+
+
+#ifdef XENSETUP_LANGUAGE_TRANSLATIONS
+
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+#pragma code_page(1252)
+
+#undef VER_LEGALCOPYRIGHT_STR
+#undef VER_FILEDESCRIPTION_STR
+#undef VER_PRODUCTNAME_STR
+
+#define VER_LEGALCOPYRIGHT_STR      "Copyright \251 2007-2009 Novell, Inc. Alle Rechte vorbehalten.", "\0"
+
+/* Windows 2000 */
+#ifdef TARGET_OS_Win2K
+#define VER_FILEDESCRIPTION_STR     "SUSE-Treiber für Windows 2000 in Xen einrichten"
+#define VER_PRODUCTNAME_STR         "SUSE-Treiber für Windows 2000 (32-Bit) in Xen"
+
+/* Windows XP 32 bit  */
+#elif defined TARGET_OS_WinXP
+#define VER_FILEDESCRIPTION_STR     "SUSE-Treiber für Windows XP in Xen einrichten"
+#define VER_PRODUCTNAME_STR         "SUSE-Treiber für Windows XP (32-Bit) in Xen"
+
+/* Windows 2003 32 bit, Windows 2003 64 bit, and XP 64 bit */
+#elif defined TARGET_OS_WinNET
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "SUSE-Treiber für Windows Server 2003 in Xen einrichten"
+#define VER_PRODUCTNAME_STR         "SUSE-Treiber für Windows Server 2003 (32-Bit) in Xen"
+#else
+#define VER_FILEDESCRIPTION_STR     "SUSE-Treiber für Windows XP/Server 2003 in Xen einrichten"
+#define VER_PRODUCTNAME_STR         "SUSE-Treiber für Windows XP und Windows Server 2003 (64-Bit) in Xen"
+#endif
+
+/* Windows Vista and Windows 2008 */
+#elif defined TARGET_OS_WinLH
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "SUSE-Treiber für Windows Vista/Server 2008 in Xen einrichten"
+#define VER_PRODUCTNAME_STR         "SUSE-Treiber für Windows Vista und Windows Server 2008 (32-Bit) in Xen"
+#else
+#define VER_FILEDESCRIPTION_STR     "SUSE-Treiber für Windows Vista/Server 2008 in Xen einrichten"
+#define VER_PRODUCTNAME_STR         "SUSE-Treiber für Windows Vista und Windows Server 2008 (64-Bit) in Xen"
+#endif
+#endif
+
+STRINGTABLE DISCARDABLE
+BEGIN
+	MBOX_UPDATE_TITLE	"SUSE-Treiber für Windows in Xen installieren"
+
+	MBOX_UPDATE_TEXT	"Wir können das Boot-Speichergerät nicht entfernen, um die Aktualisierung durchzuführen.\n\nFühren Sie das Deinstallationsprogramm (Program Files/Novell/XenDrv/uninstall.exe) aus, und\nInstallieren Sie dann das neue Treiberpaket, um die Aktualisierung durchzuführen."
+
+	MBOX_FILE_CLEANUP_TEXT  "SBei der Einrichtung konnten einige Dateien und Verzeichnisse nicht entfernt werden,\nda sie gerade verwendet werden. Sie werden entfernt, wenn\ndas System neu gestartet wird."
+
+	MBOX_XENBUS_FAILURE_TEXT  "Bei der Einrichtung konnte der Xen-Bustreiber nicht installiert werden, die Installation wurde abgebrochen."
+
+END
+
+LANGUAGE LANG_SPANISH, SUBLANG_SPANISH
+#pragma code_page(1252)
+
+#undef VER_LEGALCOPYRIGHT_STR
+#undef VER_FILEDESCRIPTION_STR
+#undef VER_PRODUCTNAME_STR
+
+#define VER_LEGALCOPYRIGHT_STR      "Copyright \251 2007-2009 Novell, Inc. Reservados todos los derechos.", "\0"
+
+/* Windows 2000 */
+#ifdef TARGET_OS_Win2K
+#define VER_FILEDESCRIPTION_STR     "Instalación del controlador SUSE para Windows 2000 en Xen"
+#define VER_PRODUCTNAME_STR         "Controladores SUSE para Windows 2000 (32 bits) en Xen"
+
+/* Windows XP 32 bit  */
+#elif defined TARGET_OS_WinXP
+#define VER_FILEDESCRIPTION_STR     "Instalación del controlador SUSE para Windows XP en Xen"
+#define VER_PRODUCTNAME_STR         "Controladores SUSE para Windows XP (32 bits) en Xen"
+
+/* Windows 2003 32 bit, Windows 2003 64 bit, and XP 64 bit */
+#elif defined TARGET_OS_WinNET
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "Instalación del controlador SUSE para Windows Server 2003 en Xen"
+#define VER_PRODUCTNAME_STR         "Controladores SUSE para Windows Server 2003 (32 bits) en Xen"
+#else
+#define VER_FILEDESCRIPTION_STR     "Instalación del controlador SUSE para Windows XP/Server 2003 en Xen"
+#define VER_PRODUCTNAME_STR         "Controladores SUSE para Windows XP y Windows Server 2003 (64 bits) en Xen"
+#endif
+
+/* Windows Vista and Windows 2008 */
+#elif defined TARGET_OS_WinLH
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "Instalación del controlador SUSE para Windows Vista/Server 2008 en Xen"
+#define VER_PRODUCTNAME_STR         "Controladores SUSE para Windows Vista y Windows Server 2008 (32 bits) en Xen"
+#else
+#define VER_FILEDESCRIPTION_STR     "Instalación del controlador SUSE para Windows Vista/Server 2008 en Xen"
+#define VER_PRODUCTNAME_STR         "Controladores SUSE para Windows Vista y Windows Server 2008 (64 bits) en Xen"
+#endif
+#endif
+
+STRINGTABLE DISCARDABLE
+BEGIN
+	MBOX_UPDATE_TITLE	"Instalación de controladores SUSE para Windows en Xen"
+
+	MBOX_UPDATE_TEXT	"No es posible eliminar el dispositivo de almacenamiento de arranque para realizar la actualización.\n\nEjecute la utilidad de desinstalación (Archivos de programa/Novell/XenDrv/uninstall.exe) e\ninstale el nuevo paquete de controlador para llevar a cabo la actualización."
+
+	MBOX_FILE_CLEANUP_TEXT  "El programa de instalación no puede eliminar algunos archivos y directorios\nporque están en uso. Se eliminarán cuando se\nrearranque el sistema."
+
+	MBOX_XENBUS_FAILURE_TEXT  "El programa de instalación no ha podido instalar el controlador Xenbus y ha finalizado la instalación."
+
+END
+
+LANGUAGE LANG_FRENCH, SUBLANG_FRENCH
+#pragma code_page(1252)
+
+#undef VER_LEGALCOPYRIGHT_STR
+#undef VER_FILEDESCRIPTION_STR
+#undef VER_PRODUCTNAME_STR
+
+#define VER_LEGALCOPYRIGHT_STR      "Copyright \251 2007-2009 Novell, Inc. Tous droits réservés.", "\0"
+
+/* Windows 2000 */
+#ifdef TARGET_OS_Win2K
+#define VER_FILEDESCRIPTION_STR     "Configuration du pilote SUSE pour Windows 2000 sur Xen"
+#define VER_PRODUCTNAME_STR         "Pilotes SUSE pour Windows 2000 (32 bits) sur Xen"
+
+/* Windows XP 32 bit  */
+#elif defined TARGET_OS_WinXP
+#define VER_FILEDESCRIPTION_STR     "Configuration du pilote SUSE pour Windows XP sur Xen"
+#define VER_PRODUCTNAME_STR         "Pilotes SUSE pour Windows XP (32 bits) sur Xen"
+
+/* Windows 2003 32 bit, Windows 2003 64 bit, and XP 64 bit */
+#elif defined TARGET_OS_WinNET
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "Configuration du pilote SUSE pour Windows 2003 sur Xen"
+#define VER_PRODUCTNAME_STR         "Pilotes SUSE pour serveur Windows 2003 (32 bits) sur Xen"
+#else
+#define VER_FILEDESCRIPTION_STR     "Configuration du pilote SUSE pour Windows XP/serveur 2003 sur Xen"
+#define VER_PRODUCTNAME_STR         "Pilotes SUSE pour Windows XP et Windows Server 2003 (64 bits) sur Xen"
+#endif
+
+/* Windows Vista and Windows 2008 */
+#elif defined TARGET_OS_WinLH
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "Configuration du pilote SUSE pour Windows Vista/Server 2008 sur Xen"
+#define VER_PRODUCTNAME_STR         "Pilotes SUSE pour Windows Vista et Windows Server 2008 (32 bits) sur Xen"
+#else
+#define VER_FILEDESCRIPTION_STR     "Configuration du pilote SUSE pour Windows Vista/Server 2008 sur Xen"
+#define VER_PRODUCTNAME_STR         "Pilotes SUSE pour Windows Vista et Windows Server 2008 (64 bits) sur Xen"
+#endif
+#endif
+
+STRINGTABLE DISCARDABLE
+BEGIN
+	MBOX_UPDATE_TITLE	"Installation des pilotes SUSE pour Windows sur Xen"
+
+	MBOX_UPDATE_TEXT	"Nous ne pouvons pas supprimer la mémoire de redémarrage pour réaliser la mise à niveau.\n\nProcédez à la désinstallation (Program Files/Novell/XenDrv/uninstall.exe),\npuis installez le nouveau paquetage de pilotes afin de réaliser la mise à niveau."
+
+	MBOX_FILE_CLEANUP_TEXT  "SLe programme de configuration n'a pas pu supprimer certains fichiers et dossiers\ncar ils sont en cours d'utilisation. Ils seront supprimés\nau redémarrage du système."
+
+	MBOX_XENBUS_FAILURE_TEXT  "Le programme de configuration n'a pas pu installer le pilote Xenbus et a interrompu l'installation."
+
+END
+
+LANGUAGE LANG_ITALIAN, SUBLANG_ITALIAN
+#pragma code_page(1252)
+
+#undef VER_LEGALCOPYRIGHT_STR
+#undef VER_FILEDESCRIPTION_STR
+#undef VER_PRODUCTNAME_STR
+
+#define VER_LEGALCOPYRIGHT_STR      "Copyright \251 2007-2009 Novell, Inc. Tutti i diritti riservati.", "\0"
+
+/* Windows 2000 */
+#ifdef TARGET_OS_Win2K
+#define VER_FILEDESCRIPTION_STR     "Installazione driver SUSE per Windows 2000 su Xen"
+#define VER_PRODUCTNAME_STR         "Driver SUSE per Windows 2000 (32 bit) su Xen"
+
+/* Windows XP 32 bit  */
+#elif defined TARGET_OS_WinXP
+#define VER_FILEDESCRIPTION_STR     "Installazione driver SUSE per Windows XP su Xen"
+#define VER_PRODUCTNAME_STR         "Driver SUSE per Windows XP (32 bit) su Xen"
+
+/* Windows 2003 32 bit, Windows 2003 64 bit, and XP 64 bit */
+#elif defined TARGET_OS_WinNET
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "Installazione driver SUSE per Windows Server 2003 su Xen"
+#define VER_PRODUCTNAME_STR         "Driver SUSE per Windows Server 2003 (32 bit) su Xen"
+#else
+#define VER_FILEDESCRIPTION_STR     "Installazione driver SUSE per Windows XP/Server 2003 su Xen"
+#define VER_PRODUCTNAME_STR         "Driver SUSE per Windows XP e Windows Server 2003 (64 bit) su Xen"
+#endif
+
+/* Windows Vista and Windows 2008 */
+#elif defined TARGET_OS_WinLH
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "Installazione driver SUSE per Windows Vista/Server 2008 su Xen"
+#define VER_PRODUCTNAME_STR         "Driver SUSE per Windows Vista e Windows Server 2008 (32 bit) su Xen"
+#else
+#define VER_FILEDESCRIPTION_STR     "Installazione driver SUSE per Windows Vista/Server 2008 su Xen"
+#define VER_PRODUCTNAME_STR         "Driver SUSE per Windows Vista e Windows Server 2008 (64 bit) su Xen"
+#endif
+#endif
+
+STRINGTABLE DISCARDABLE
+BEGIN
+	MBOX_UPDATE_TITLE	"Installazione driver SUSE per Windows su Xen"
+
+	MBOX_UPDATE_TEXT	"Impossibile rimuovere il dispositivo di memorizzazione di avvio per eseguire l'aggiornamento.\n\nEseguire l'utility per la disintallazione (Program Files/Novell/XenDrv/uninstall.exe),\nquindi installare il nuovo pacchetto di driver per eseguire l'upgrade."
+
+	MBOX_FILE_CLEANUP_TEXT  "L'installazione non è stata in grado di rimuovere alcuni file e directory,\nin quanto sono in uso. Verranno rimossi\nal riavvio del sistema."
+
+	MBOX_XENBUS_FAILURE_TEXT  "L'installazione non è stata in grado di installare il driver Xenbus ed è stata interrotta."
+
+END
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+#pragma code_page(932)
+
+#undef VER_LEGALCOPYRIGHT_STR
+#undef VER_FILEDESCRIPTION_STR
+#undef VER_PRODUCTNAME_STR
+
+#define VER_LEGALCOPYRIGHT_STR      "Copyright \251 2007-2009 Novell, Inc. All rights reserved.", "\0"
+
+/* Windows 2000 */
+#ifdef TARGET_OS_Win2K
+#define VER_FILEDESCRIPTION_STR     "Xenã‚ÌWindows 2000—pSUSEƒhƒ‰ƒCƒo‚ÌƒZƒbƒgƒAƒbƒv"
+#define VER_PRODUCTNAME_STR         "Xenã‚ÌWindows 2000 (32ƒrƒbƒg)—pSUSEƒhƒ‰ƒCƒo"
+
+/* Windows XP 32 bit  */
+#elif defined TARGET_OS_WinXP
+#define VER_FILEDESCRIPTION_STR     "Xenã‚ÌWindows XP—pSUSEƒhƒ‰ƒCƒo‚ÌƒZƒbƒgƒAƒbƒv"
+#define VER_PRODUCTNAME_STR         "Xenã‚ÌWindows XP (32ƒrƒbƒg)—pSUSEƒhƒ‰ƒCƒo"
+
+/* Windows 2003 32 bit, Windows 2003 64 bit, and XP 64 bit */
+#elif defined TARGET_OS_WinNET
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "Xenã‚ÌWindows Server 2003—pSUSEƒhƒ‰ƒCƒo‚ÌƒZƒbƒgƒAƒbƒv"
+#define VER_PRODUCTNAME_STR         "Xenã‚ÌWindows Server 2003 (32ƒrƒbƒg)—pSUSEƒhƒ‰ƒCƒo"
+#else
+#define VER_FILEDESCRIPTION_STR     "Xenã‚ÌWindows XP/Server 2003—pSUSEƒhƒ‰ƒCƒo‚ÌƒZƒbƒgƒAƒbƒv"
+#define VER_PRODUCTNAME_STR         "Xenã‚ÌWindows XP‚¨‚æ‚ÑWindows Server 2003 (64ƒrƒbƒg)—pSUSEƒhƒ‰ƒCƒo"
+#endif
+
+/* Windows Vista and Windows 2008 */
+#elif defined TARGET_OS_WinLH
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "Xenã‚ÌWindows Vista/Server 2008—pSUSEƒhƒ‰ƒCƒo‚ÌƒZƒbƒgƒAƒbƒv"
+#define VER_PRODUCTNAME_STR         "Xenã‚ÌWindows Vista‚¨‚æ‚ÑWindows Server 2008 (32ƒrƒbƒg)—pSUSEƒhƒ‰ƒCƒo"
+#else
+#define VER_FILEDESCRIPTION_STR     "Xenã‚ÌWindows Vista/Server 2008—pSUSEƒhƒ‰ƒCƒo‚ÌƒZƒbƒgƒAƒbƒv"
+#define VER_PRODUCTNAME_STR         "Xenã‚ÌWindows Vista‚¨‚æ‚ÑWindows Server 2008 (64ƒrƒbƒg)—pSUSEƒhƒ‰ƒCƒo"
+#endif
+#endif
+
+STRINGTABLE DISCARDABLE
+BEGIN
+	MBOX_UPDATE_TITLE	"Xen‚Ö‚ÌWindows—pSUSEƒhƒ‰ƒCƒo‚ÌƒCƒ“ƒXƒg[ƒ‹"
+
+	MBOX_UPDATE_TEXT	"ƒu[ƒgƒXƒgƒŒ[ƒWƒfƒoƒCƒX‚ğíœ‚µ‚ÄAƒAƒbƒvƒOƒŒ[ƒh‚ğÀs‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚¹‚ñB\n\nƒAƒ“ƒCƒ“ƒXƒg[ƒ‹ƒ†[ƒeƒBƒŠƒeƒB(Program Files/Novell/XenDrv/uninstall.exe)‚ğÀs‚µA\nV‚µ‚¢ƒhƒ‰ƒCƒoƒpƒbƒN‚ğƒCƒ“ƒXƒg[ƒ‹‚µ‚ÄAƒAƒbƒvƒOƒŒ[ƒh‚ğÀs‚µ‚Ä‚­‚¾‚³‚¢B"
+
+	MBOX_FILE_CLEANUP_TEXT  "‚¢‚­‚Â‚©‚Ìƒtƒ@ƒCƒ‹‚¨‚æ‚ÑƒfƒBƒŒƒNƒgƒŠ‚Íg—p‚Å‚ ‚é‚½‚ßA\nƒZƒbƒgƒAƒbƒv‚Åíœ‚Å‚«‚Ü‚¹‚ñ‚Å‚µ‚½B‚±‚ê‚ç‚ÍƒVƒXƒeƒ€‚ğÄ‹N“®‚µ‚½\n‚Æ‚«‚Éíœ‚³‚ê‚Ü‚·B"
+
+	MBOX_XENBUS_FAILURE_TEXT  "ƒZƒbƒgƒAƒbƒv‚ÅXenbusƒhƒ‰ƒCƒo‚ğƒCƒ“ƒXƒg[ƒ‹‚Å‚«‚È‚©‚Á‚½‚½‚ßAƒCƒ“ƒXƒg[ƒ‹‚ª’†’f‚³‚ê‚Ü‚µ‚½B"
+
+END
+
+LANGUAGE LANG_KOREAN, SUBLANG_DEFAULT
+#pragma code_page(949)
+
+#undef VER_LEGALCOPYRIGHT_STR
+#undef VER_FILEDESCRIPTION_STR
+#undef VER_PRODUCTNAME_STR
+
+#define VER_LEGALCOPYRIGHT_STR      "Copyright \251 2007-2009 Novell, Inc. All rights reserved.", "\0"
+
+/* Windows 2000 */
+#ifdef TARGET_OS_Win2K
+#define VER_FILEDESCRIPTION_STR     "Xen¿¡¼­ Windows 2000¿ë SUSE µå¶óÀÌ¹ö ¼³Á¤"
+#define VER_PRODUCTNAME_STR         "Xen¿¡¼­ Windows 2000(32ºñÆ®)¿ë SUSE µå¶óÀÌ¹ö"
+
+/* Windows XP 32 bit  */
+#elif defined TARGET_OS_WinXP
+#define VER_FILEDESCRIPTION_STR     "Xen¿¡¼­ Windows XP¿ë SUSE µå¶óÀÌ¹ö ¼³Á¤"
+#define VER_PRODUCTNAME_STR         "Xen¿¡¼­ Windows XP(32ºñÆ®)¿ë SUSE µå¶óÀÌ¹ö"
+
+/* Windows 2003 32 bit, Windows 2003 64 bit, and XP 64 bit */
+#elif defined TARGET_OS_WinNET
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "Xen¿¡¼­ Windows Server 2003¿ë SUSE µå¶óÀÌ¹ö ¼³Á¤"
+#define VER_PRODUCTNAME_STR         "Xen¿¡¼­ Windows Server 2003(32ºñÆ®)¿ë SUSE µå¶óÀÌ¹ö"
+#else
+#define VER_FILEDESCRIPTION_STR     "Xen¿¡¼­ Windows XP/Server 2003¿ë SUSE µå¶óÀÌ¹ö ¼³Á¤"
+#define VER_PRODUCTNAME_STR         "Xen¿¡¼­ Windows XP ¹× Windows Server 2003(64ºñÆ®)¿ë SUSE µå¶óÀÌ¹ö"
+#endif
+
+/* Windows Vista and Windows 2008 */
+#elif defined TARGET_OS_WinLH
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "Xen¿¡¼­ Windows Vista/Server 2008¿ë SUSE µå¶óÀÌ¹ö ¼³Á¤"
+#define VER_PRODUCTNAME_STR         "Xen¿¡¼­ Windows Vista ¹× Windows Server 2008(32ºñÆ®)¿ë SUSE µå¶óÀÌ¹ö"
+#else
+#define VER_FILEDESCRIPTION_STR     "Xen¿¡¼­ Windows Vista/Server 2008¿ë SUSE µå¶óÀÌ¹ö ¼³Á¤"
+#define VER_PRODUCTNAME_STR         "Xen¿¡¼­ Windows Vista ¹× Windows Server 2008(64ºñÆ®)¿ë SUSE µå¶óÀÌ¹ö"
+#endif
+#endif
+
+STRINGTABLE DISCARDABLE
+BEGIN
+	MBOX_UPDATE_TITLE	"Xen¿¡¼­ Windows¿ë SUSE µå¶óÀÌ¹ö ¼³Ä¡"
+
+	MBOX_UPDATE_TEXT	"¾÷±×·¹ÀÌµå¸¦ ¼öÇàÇÏ±â À§ÇØ ºÎÆ® ½ºÅä¸®Áö ÀåÄ¡¸¦ Á¦°ÅÇÒ ¼ö ¾ø½À´Ï´Ù.\n\n¼³Ä¡ Á¦°Å À¯Æ¿¸®Æ¼(Program Files/Novell/XenDrv/uninstall.exe)¸¦ ½ÇÇàÇÑ ´ÙÀ½\n»õ µå¶óÀÌ¹ö ÆÑÀ» ¼³Ä¡ÇÏ¿© ¾÷±×·¹ÀÌµå¸¦ ¼öÇàÇÏ½Ê½Ã¿À."
+
+	MBOX_FILE_CLEANUP_TEXT  "S¼³Ä¡ °úÁ¤¿¡¼­ ÀÏºÎ ÆÄÀÏ ¹× µğ·ºÅä¸®¸¦ Á¦°ÅÇÏÁö ¸øÇß½À´Ï´Ù.\nÇØ´ç ÆÄÀÏ ¹× µğ·ºÅä¸®°¡ »ç¿ë ÁßÀÌ±â ¶§¹®ÀÔ´Ï´Ù. ½Ã½ºÅÛÀÌ ÀçºÎÆÃµÉ ¶§\nÁ¦°ÅµË´Ï´Ù."
+
+	MBOX_XENBUS_FAILURE_TEXT  "¼³Ä¡ °úÁ¤¿¡¼­ Xenbus µå¶óÀÌ¹ö¸¦ ¼³Ä¡ÇÏÁö ¸øÇÏ¿© ¼³Ä¡¸¦ Á¾·áÇß½À´Ï´Ù."
+
+END
+
+LANGUAGE LANG_PORTUGUESE, SUBLANG_PORTUGUESE_BRAZILIAN
+#pragma code_page(1252)
+
+#undef VER_LEGALCOPYRIGHT_STR
+#undef VER_FILEDESCRIPTION_STR
+#undef VER_PRODUCTNAME_STR
+
+#define VER_LEGALCOPYRIGHT_STR      "Copyright \251 2007-2009 Novell, Inc. Todos os direitos reservados.", "\0"
+
+/* Windows 2000 */
+#ifdef TARGET_OS_Win2K
+#define VER_FILEDESCRIPTION_STR     "Instalação de Driver SUSE para Windows 2000 no Xen"
+#define VER_PRODUCTNAME_STR         "Drivers SUSE para Windows 2000 (32-bit) no Xen"
+
+/* Windows XP 32 bit  */
+#elif defined TARGET_OS_WinXP
+#define VER_FILEDESCRIPTION_STR     "Instalação de Driver SUSE para Windows XP no Xen"
+#define VER_PRODUCTNAME_STR         "Drivers SUSE para Windows XP (32-bit) no Xen"
+
+/* Windows 2003 32 bit, Windows 2003 64 bit, and XP 64 bit */
+#elif defined TARGET_OS_WinNET
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "Instalação de Driver SUSE para Windows Server 2003 no Xen"
+#define VER_PRODUCTNAME_STR         "Drivers SUSE para Windows Server 2003 (32-bit) no Xen"
+#else
+#define VER_FILEDESCRIPTION_STR     "Instalação de Driver SUSE para Windows XP/Server 2003 no Xen"
+#define VER_PRODUCTNAME_STR         "Drivers SUSE para Windows XP e Windows Server 2003 (64-bit) no Xen"
+#endif
+
+/* Windows Vista and Windows 2008 */
+#elif defined TARGET_OS_WinLH
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "Instalação de Driver SUSE para Windows Vista/Server 2008 no Xen"
+#define VER_PRODUCTNAME_STR         "Drivers SUSE para Windows Vista e Windows Server 2008 (32-bit) no Xen"
+#else
+#define VER_FILEDESCRIPTION_STR     "Instalação de Driver SUSE para Windows Vista/Server 2008 no Xen"
+#define VER_PRODUCTNAME_STR         "Drivers SUSE para Windows Vista e Windows Server 2008 (64-bit) no Xen"
+#endif
+#endif
+
+STRINGTABLE DISCARDABLE
+BEGIN
+	MBOX_UPDATE_TITLE	"Instalação de Drivers SUSE para Windows no Xen"
+
+	MBOX_UPDATE_TEXT	"Não é possível remover o dispositivo de armazenamento de boot para fazer o upgrade.\n\nExecute o Utilitário de Desinstalação (Arquivos de Programas/Novell/XenDrv/uninstall.exe) e\ninstale o novo pacote de driver para fazer o upgrade."
+
+	MBOX_FILE_CLEANUP_TEXT  "A Instalação não pôde remover alguns arquivos e diretórios,\npois eles estão sendo utilizados. Eles serão removidos quando o\nsistema for reinicializado."
+
+	MBOX_XENBUS_FAILURE_TEXT  "Não foi possível instalar o driver Xenbus e a instalação foi interrompida."
+
+END
+
+LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+
+#undef VER_LEGALCOPYRIGHT_STR
+#undef VER_FILEDESCRIPTION_STR
+#undef VER_PRODUCTNAME_STR
+
+#define VER_LEGALCOPYRIGHT_STR      "\251 Novell, Inc. 2007-2008. Âñå ïğàâà çàùèùåíû.", "\0"
+
+/* Windows 2000 */
+#ifdef TARGET_OS_Win2K
+#define VER_FILEDESCRIPTION_STR     "Óñòàíîâêà äğàéâåğîâ SUSE äëÿ Windows 2000 â Xen"
+#define VER_PRODUCTNAME_STR         "Äğàéâåğû SUSE äëÿ Windows 2000 (32-ğàçğÿäíûå) â Xen"
+
+/* Windows XP 32 bit  */
+#elif defined TARGET_OS_WinXP
+#define VER_FILEDESCRIPTION_STR     "Óñòàíîâêà äğàéâåğîâ SUSE äëÿ Windows XP â Xen"
+#define VER_PRODUCTNAME_STR         "Äğàéâåğû SUSE äëÿ Windows XP (32-ğàçğÿäíûå) â Xen"
+
+/* Windows 2003 32 bit, Windows 2003 64 bit, and XP 64 bit */
+#elif defined TARGET_OS_WinNET
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "Óñòàíîâêà äğàéâåğîâ SUSE äëÿ Windows Server 2003 â Xen"
+#define VER_PRODUCTNAME_STR         "Äğàéâåğû SUSE äëÿ Windows Server 2003 (32-ğàçğÿäíûå) â Xen"
+#else
+#define VER_FILEDESCRIPTION_STR     "Óñòàíîâêà äğàéâåğîâ SUSE äëÿ Windows XP è Server 2003 â Xen"
+#define VER_PRODUCTNAME_STR         "Äğàéâåğû SUSE äëÿ ÎÑ Windows XP è  Windows Server 2003 (64-ğàçğÿäíûå) â Xen"
+#endif
+
+/* Windows Vista and Windows 2008 */
+#elif defined TARGET_OS_WinLH
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "Óñòàíîâêà äğàéâåğîâ SUSE äëÿ Windows Vista è Server 2008 â Xen"
+#define VER_PRODUCTNAME_STR         "Äğàéâåğû SUSE äëÿ ÎÑ Windows Vista è Windows Server 2008 (32-ğàçğÿäíûå) â Xen"
+#else
+#define VER_FILEDESCRIPTION_STR     "Óñòàíîâêà äğàéâåğîâ SUSE äëÿ Windows Vista è Server 2008 â Xen"
+#define VER_PRODUCTNAME_STR         "Äğàéâåğû SUSE äëÿ ÎÑ Windows Vista è Windows Server 2008 (64-ğàçğÿäíûå) â Xen"
+#endif
+#endif
+
+STRINGTABLE DISCARDABLE
+BEGIN
+	MBOX_UPDATE_TITLE	"Óñòàíîâêà äğàéâåğîâ SUSE äëÿ Windows â Xen"
+
+	MBOX_UPDATE_TEXT	"Íå óäàåòñÿ óäàëèòü çàïîìèíàşùåå óñòğîéñòâî çàãğóçêè äëÿ âûïîëíåíèÿ îáíîâëåíèÿ.\n\nÇàïóñòèòå ïğîãğàììó óäàëåíèÿ (Program Files/Novell/XenDrv/uninstall.exe) è\nóñòàíîâèòå íîâûé ïàêåò äğàéâåğîâ, ÷òîáû âûïîëíèòü îáíîâëåíèå."
+
+	MBOX_FILE_CLEANUP_TEXT  "Ïğîãğàììå óñòàíîâêè íå óäàëîñü óäàëèòü íåêîòîğûå ôàéëû è êàòàëîãè,\nïîñêîëüêó îíè â äàííûé ìîìåíò èñïîëüçóşòñÿ. Îíè áóäóò óäàëåíû\nïîñëå ïåğåçàãğóçêè ñèñòåìû."
+
+	MBOX_XENBUS_FAILURE_TEXT  "Íå óäàëîñü óñòàíîâèòü äğàéâåğ Xenbus, óñòàíîâêà áûëà ïğåğâàíà."
+
+END
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+#pragma code_page(936)
+
+#undef VER_LEGALCOPYRIGHT_STR
+#undef VER_FILEDESCRIPTION_STR
+#undef VER_PRODUCTNAME_STR
+
+#define VER_LEGALCOPYRIGHT_STR      "°æÈ¨ËùÓĞ \251 2007-2008 Novell, Inc. ±£ÁôËùÓĞÈ¨Àû¡£", "\0"
+
+/* Windows 2000 */
+#ifdef TARGET_OS_Win2K
+#define VER_FILEDESCRIPTION_STR     "ÓÃÓÚÔÚ Xen ÉÏÔËĞĞµÄ Windows 2000 µÄ SUSE Çı¶¯³ÌĞò°²×°³ÌĞò"
+#define VER_PRODUCTNAME_STR         "ÓÃÓÚÔÚ Xen ÉÏÔËĞĞµÄ Windows 2000£¨32 Î»£©µÄ SUSE Çı¶¯³ÌĞò"
+
+/* Windows XP 32 bit  */
+#elif defined TARGET_OS_WinXP
+#define VER_FILEDESCRIPTION_STR     "ÓÃÓÚÔÚ Xen ÉÏÔËĞĞµÄ Windows XP µÄ SUSE Çı¶¯³ÌĞò°²×°³ÌĞò"
+#define VER_PRODUCTNAME_STR         "ÓÃÓÚÔÚ Xen ÉÏÔËĞĞµÄ Windows XP£¨32 Î»£©µÄ SUSE Çı¶¯³ÌĞò"
+
+/* Windows 2003 32 bit, Windows 2003 64 bit, and XP 64 bit */
+#elif defined TARGET_OS_WinNET
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "ÓÃÓÚÔÚ Xen ÉÏÔËĞĞµÄ Windows Server 2003 µÄ SUSE Çı¶¯³ÌĞò°²×°³ÌĞò"
+#define VER_PRODUCTNAME_STR         "ÓÃÓÚÔÚ Xen ÉÏÔËĞĞµÄ Windows Server 2003£¨32 Î»£©µÄ SUSE Çı¶¯³ÌĞò"
+#else
+#define VER_FILEDESCRIPTION_STR     "ÓÃÓÚÔÚ Xen ÉÏÔËĞĞµÄ Windows XP/Server 2003 µÄ SUSE Çı¶¯³ÌĞò°²×°³ÌĞò"
+#define VER_PRODUCTNAME_STR         "ÓÃÓÚÔÚ Xen ÉÏÔËĞĞµÄ Windows XP ºÍ Windows Server 2003£¨64 Î»£©µÄ SUSE Çı¶¯³ÌĞò"
+#endif
+
+/* Windows Vista and Windows 2008 */
+#elif defined TARGET_OS_WinLH
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "ÓÃÓÚÔÚ Xen ÉÏÔËĞĞµÄ Windows Vista/Server 2008 µÄ SUSE Çı¶¯³ÌĞò°²×°³ÌĞò"
+#define VER_PRODUCTNAME_STR         "ÓÃÓÚÔÚ Xen ÉÏÔËĞĞµÄ Windows Vista ºÍ Windows Server 2008£¨32 Î»£©µÄ SUSE Çı¶¯³ÌĞò"
+#else
+#define VER_FILEDESCRIPTION_STR     "ÓÃÓÚÔÚ Xen ÉÏÔËĞĞµÄ Windows Vista/Server 2008 µÄ SUSE Çı¶¯³ÌĞò°²×°³ÌĞò"
+#define VER_PRODUCTNAME_STR         "ÓÃÓÚÔÚ Xen ÉÏÔËĞĞµÄ Windows Vista ºÍ Windows Server 2008£¨64 Î»£©µÄ SUSE Çı¶¯³ÌĞò"
+#endif
+#endif
+
+STRINGTABLE DISCARDABLE
+BEGIN
+	MBOX_UPDATE_TITLE	"°²×°ÓÃÓÚÔÚ Xen ÉÏÔËĞĞµÄ Windows µÄ SUSE Çı¶¯³ÌĞò"
+
+	MBOX_UPDATE_TEXT	"ÎÒÃÇÎŞ·¨È¥³ıÒıµ¼´¢´æÉè±¸ÒÔÖ´ĞĞÉı¼¶¡£\n\nÇëÔËĞĞĞ¶×°ÊµÓÃ³ÌĞò (Program Files/Novell/XenDrv/uninstall.exe)£¬\nÈ»ºó°²×°ĞÂµÄÇı¶¯³ÌĞò°üÒÔÖ´ĞĞÉı¼¶¡£"
+
+	MBOX_FILE_CLEANUP_TEXT  "°²×°³ÌĞòÎŞ·¨È¥³ı²¿·ÖÎÄ¼şºÍÄ¿Â¼£¬\nÒòÎªÕâĞ©ÎÄ¼şºÍÄ¿Â¼ÕıÔÚÊ¹ÓÃ¡£ÏµÍ³ÖØÒıµ¼Ê±½«\nÈ¥³ıËüÃÇ¡£"
+
+	MBOX_XENBUS_FAILURE_TEXT  "°²×°³ÌĞòÎŞ·¨°²×° Xenbus Çı¶¯³ÌĞò²¢ÇÒ°²×°ÒÑÖÕÖ¹¡£"
+
+END
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL
+#pragma code_page(950)
+
+#undef VER_LEGALCOPYRIGHT_STR
+#undef VER_FILEDESCRIPTION_STR
+#undef VER_PRODUCTNAME_STR
+
+#define VER_LEGALCOPYRIGHT_STR      "ª©Åv \251 2007-2008 Novell, Inc. ª©Åv©Ò¦³¡C", "\0"
+
+/* Windows 2000 */
+#ifdef TARGET_OS_Win2K
+#define VER_FILEDESCRIPTION_STR     "¾A¥Î©ó Windows 2000 on Xen ªº SUSE ÅX°Êµ{¦¡¦w¸Ëµ{¦¡"
+#define VER_PRODUCTNAME_STR         "¾A¥Î©ó Windows 2000 (32 ¦ì¤¸) on Xen ªº SUSE ÅX°Êµ{¦¡"
+
+/* Windows XP 32 bit  */
+#elif defined TARGET_OS_WinXP
+#define VER_FILEDESCRIPTION_STR     "¾A¥Î©ó Windows XP on Xen ªº SUSE ÅX°Êµ{¦¡¦w¸Ëµ{¦¡"
+#define VER_PRODUCTNAME_STR         "¾A¥Î©ó Windows XP (32 ¦ì¤¸) on Xen ªº SUSE ÅX°Êµ{¦¡"
+
+/* Windows 2003 32 bit, Windows 2003 64 bit, and XP 64 bit */
+#elif defined TARGET_OS_WinNET
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "¾A¥Î©ó Windows Server 2003 on Xen ªº SUSE ÅX°Êµ{¦¡¦w¸Ëµ{¦¡"
+#define VER_PRODUCTNAME_STR         "¾A¥Î©ó Windows Server 2003 (32 ¦ì¤¸) on Xen ªº SUSE ÅX°Êµ{¦¡"
+#else
+#define VER_FILEDESCRIPTION_STR     "¾A¥Î©ó Windows XP/Server 2003 on Xen ªº SUSE ÅX°Êµ{¦¡¦w¸Ëµ{¦¡"
+#define VER_PRODUCTNAME_STR         "¾A¥Î©ó Windows XP on Xen ©M Windows Server 2003 (64 ¦ì¤¸) on Xen ªº SUSE ÅX°Êµ{¦¡"
+#endif
+
+/* Windows Vista and Windows 2008 */
+#elif defined TARGET_OS_WinLH
+#ifdef ARCH_x86
+#define VER_FILEDESCRIPTION_STR     "¾A¥Î©ó Windows Vista/Server 2008 on Xen ªº SUSE ÅX°Êµ{¦¡¦w¸Ëµ{¦¡"
+#define VER_PRODUCTNAME_STR         "¾A¥Î©ó Windows Vista on Xen ©M Windows Server 2008 (32 ¦ì¤¸) on Xen ªº SUSE ÅX°Êµ{¦¡"
+#else
+#define VER_FILEDESCRIPTION_STR     "¾A¥Î©ó Windows Vista/Server 2008 on Xen ªº SUSE ÅX°Êµ{¦¡¦w¸Ëµ{¦¡"
+#define VER_PRODUCTNAME_STR         "¾A¥Î©ó Windows Vista on Xen ©M Windows Server 2008 (64 ¦ì¤¸) on Xen ªº SUSE ÅX°Êµ{¦¡"
+#endif
+#endif
+
+STRINGTABLE DISCARDABLE
+BEGIN
+	MBOX_UPDATE_TITLE	"¾A¥Î©ó Windows on Xen ¦w¸Ëªº SUSE ÅX°Êµ{¦¡"
+
+	MBOX_UPDATE_TEXT	"µLªk²¾°£¶}¾÷Àx¦s³]³Æ¥H°õ¦æ¤É¯Å¡C\n\n½Ğ°õ¦æ¸Ñ°£¦w¸Ë¤½¥Îµ{¦¡ (Program Files/Novell/XenDrv/uninstall.exe)¡A\nµM«á¦w¸Ë·sªºÅX°Êµ{¦¡®M¥ó¥H°õ¦æ¤É¯Å¡C"
+
+	MBOX_FILE_CLEANUP_TEXT  "¦w¸Ëµ{¦¡µLªk²¾°£³¡¥÷ÀÉ®×©M¥Ø¿ı¡A\n¦]¬°¥¦­Ì¥¿¦b¨Ï¥Î¤¤¡C±N¦b¨t²Î­«·s¶}¾÷®É²¾°£\n³o¨ÇÀÉ®×©M¥Ø¿ı¡C"
+
+	MBOX_XENBUS_FAILURE_TEXT  "¦w¸Ëµ{¦¡µLªk¦w¸Ë Xenbus ÅX°Êµ{¦¡¡A¨Ã¤w²×¤î¦w¸Ë¡C"
+
+END
+
+#endif /* ifdef XENSETUP_LANGUAGE_TRANSLATIONS */
+
+#include "common.ver"

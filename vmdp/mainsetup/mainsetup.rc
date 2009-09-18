@@ -1,0 +1,71 @@
+/*****************************************************************************
+ *
+ *   File Name:      xensetup.rc
+ *   Created by:     kra
+ *   Date created:   03/20/09
+ *
+ *   %version:       4 %
+ *   %derived_by:    kallan %
+ *   %date_modified: Fri Jun 05 17:18:17 2009 %
+ *
+ *****************************************************************************/
+/*****************************************************************************
+ *                                                                           *
+ * Copyright (C) Unpublished Work of Novell, Inc. All Rights Reserved.       *
+ *                                                                           *
+ * THIS WORK IS AN UNPUBLISHED WORK AND CONTAINS CONFIDENTIAL, PROPRIETARY   *
+ * AND TRADE SECRET INFORMATION OF NOVELL, INC. ACCESS TO THIS WORK IS       *
+ * RESTRICTED TO (I) NOVELL, INC. EMPLOYEES WHO HAVE A NEED TO KNOW HOW TO   *
+ * PERFORM TASKS WITHIN THE SCOPE OF THEIR ASSIGNMENTS AND (II) ENTITIES     *
+ * OTHER THAN NOVELL, INC. WHO HAVE ENTERED INTO APPROPRIATE LICENSE         *
+ * AGREEMENTS. NO PART OF THIS WORK MAY BE USED, PRACTICED, PERFORMED,       *
+ * COPIED, DISTRIBUTED, REVISED, MODIFIED, TRANSLATED, ABRIDGED, CONDENSED,  *
+ * EXPANDED, COLLECTED, COMPILED, LINKED, RECAST, TRANSFORMED OR ADAPTED     *
+ * WITHOUT THE PRIOR WRITTEN CONSENT OF NOVELL, INC. ANY USE OR EXPLOITATION *
+ * OF THIS WORK WITHOUT AUTHORIZATION COULD SUBJECT THE PERPETRATOR TO       *
+ * CRIMINAL AND CIVIL LIABILITY.                                             *
+ *                                                                           *
+ *****************************************************************************/
+/*****************************************************************************
+ *
+ * Resources used by the Novell Virtual Machine Driver Pack	Setup
+ *
+ *****************************************************************************/
+
+#include <windows.h>
+#include <ntverp.h>
+#include <win_version.h>
+
+
+#define VER_INTERNALNAME_STR        "setup.exe"
+#define VER_ORIGINALFILENAME_STR    "setup.exe"
+
+#define VER_FILEVERSION             1,0,0,0004
+#define VER_FILEVERSION_STR         "1.0.0.0004\0"
+
+#undef VER_PRODUCTVERSION
+#define VER_PRODUCTVERSION          PV_PRODUCTVERSION
+
+#undef VER_PRODUCTVERSION_STR
+#define VER_PRODUCTVERSION_STR      PV_PRODUCTVERSION_STR
+
+#undef VER_COMPANYNAME_STR
+#define VER_COMPANYNAME_STR         VIRT_COMPANYNAME_STR
+
+#define VER_FILETYPE                VFT_APP
+#define VER_FILESUBTYPE             VFT2_DRV_SYSTEM
+
+/* English (U.S.) resources */
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+#undef VER_LEGALCOPYRIGHT_STR
+#undef VER_FILEDESCRIPTION_STR
+#undef VER_PRODUCTNAME_STR
+
+#define VER_LEGALCOPYRIGHT_STR      "Copyright \251 2009 Novell, Inc. All rights reserved.", "\0"
+
+#define VER_FILEDESCRIPTION_STR     "SUSE Driver Setup for Windows on Xen"
+#define VER_PRODUCTNAME_STR         "SUSE Drivers for Windows on Xen"
+
+#include "common.ver"

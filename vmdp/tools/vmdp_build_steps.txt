@@ -1,0 +1,145 @@
+To create a Windows VMDP package do the following:
+
+- Windows side: You must have the DDK that matches the scripts installed.
+Currently its 6001.18002.
+
+1 All needed batch file will be located in \<dir_that_contains_vmdp>\vmdp\tools
+	<dir_that_contains_vmdp> may be at the root e.g. c:\ and hence not
+	specified. It may also be the full path to where the checked out vmdp
+	directory is.
+
+	When executing the bat files, <dir_that_contains_vmdp> is either not
+	specifiec because the vmdp directory is at the root, or it is given in
+	the format of \my_dir_and_sub_dirs_to where_vmdp_is.
+
+2 buildpkg.bat <dir_that_contains_vmdp> [b | c | z]
+	biuldpkg will call other scripts to get all the Windows files built,
+	copied to directories, and zip the sys files.  The zip file will be 
+	<dir_that_contains_vmdp>\vmdp\sign\winpv2sign.zip
+
+3 Submit the sys zip file to
+http://buildersign-web.provo.novell.com/sign_automation/postFile.php
+or
+http://buildersign-web-backup.provo.novell.com/sign_automation/postFile.php
+	to get the sys files signed.
+
+4 When the zip file comes back, the sys files will be signed.  Save the
+	returned zip file at <dir_that_contains_vmdp>\vmdp\sign
+
+5 Extract the sys zip file, e.g. 7z x <zip>
+	By placing the zip at <dir_that_contains_vmdp>\vmdp\sign, the extracted
+	files will overwrite the non-signed files in
+	<dir_that_contains_vmdp>\wvmdp\sign\sys.  This prepares for the next
+	step.
+
+6 makecats.bat <dir_that_contains_vmdp>
+	This will create cat files from the signed sys files returned from
+	step 5 and create a zip file.  The zip file will be in
+	<dir_that_contains_vmdp>\vmdp\sign\winpvcat.zip
+
+7 Submit the cat zip file to
+http://buildersign-web.provo.novell.com/sign_automation/postFile.php
+	or
+http://buildersign-web-backup.provo.novell.com/sign_automation/postFile.php
+	to get the cat files signed.
+
+8 When the zip file comes back, the cat files will be signed.  Save the
+	returned zip file at <dir_that_contains_vmdp>\vmdp\sign
+
+9 Extract the cat zip file, e.g. 7z x <zip>
+	By placing the zip at <dir_that_contains_vmdp>\vmdp\sign, the extracted
+	files will overwrite the non-signed files in
+	<dir_that_contains_vmdp>\vmdp\sign\cat.
+
+10 If building a exe zip file, go to step 11.  If biulding ISOs on linux, go to
+	step 14.
+
+11 cp2stage.bat <package> [platform] <dir_that_contains_vmdp>
+	<package> can be one of the following: xenbus, xenblk, xennet,
+	mainsetup, setup, uninstall, pvctrl, or xensvc.  If <package> is
+	xenbus, xenblk, or xennet, [platform] may optionally be specified.
+	[platform] can be: w2k, wxp, w2k3, w2k3_32, w2k3_64, w2k8, w2k8_32,
+	or w2k8_64.
+
+	cp2stage must be called for each package that is new and needs to go
+	into the final exe zip.
+
+12 prepare_exe <file_name> [preserve] <dir_that_contains_vmdp>
+	<file_name> is the version to be given to the resulting exe zip file.
+	The exe zip file will be <file_name>.exe
+	[preserve] may be specified to keed the temp directories used to create
+	the exe and zip files.
+
+13 Once you get the WHQL cat files back, copy the cat files into the
+	\winvmdp\vmdp_stage directory and run the prepare_exe.bat script again.
+
+At this point, the exe just needs to be delivered to where ever it needs to
+go for others to download.
+
+14 cp2linux.bat <package> <ip_address>
+	<package> can be: xenbus, xenblk, xennet, setup, uninstall, pvctrl,
+	xensvc
+	example: cp2linux xenbus 151.155.144.121
+
+	cp2linux will copy the <package> files to the
+	root@<ip_address>:/root/driverpack/winpv_stage directory.
+
+	Do a cp2linux for each package that has changed since the last VMDP
+	build.
+
+
+- Linux side:
+
+The base directory is /root/driverpack.  Subdirectory winpv_base contains
+the files to start with.  Subdirectory winpv_stage receives the files form
+the Windows cp2linux.bat script.
+
+With winpv_base and winpv_stage populated, the process of creating ISOs can
+start.
+
+1 ./mkpvisos.sh
+mkpvisos.sh iterates through all platforms for both fre and chk and copies
+files from winpv_base and winpv_stage to produce all files needed to
+create the ISO.  All ISOs are placed into the winpv_isos directory.
+
+2 ./cpisos.sh <version>
+This will copy all the ISOs found in the winpv_isos to Xen100 to a
+vmdp<version> directory.  The current directory is unlinked and linked to
+the vmdp<version> directory.
+
+3. optionally run prepare_submission.sh
+This will create all the zip files for the submitpack.  The files end up in
+the vmdp directory.
+
+
+- WHQL
+
+1 Once you get the WHQL cat files back, copy the cat files into the
+	winpv_stage directory and run the mkpvisos.sh and cpisos.sh.
+
+2 ./prepare_submission.sh
+	This will create all the zip files for the submitpack.  The files end
+	up in the vmdp directory.
+
+- Special builds
+
+1 It may be desired to create a special build.  To do so, create a
+	winpv_stage<version> that is in the same format as winpv_stage.
+	<version> is any version/identifier for the special build.
+
+2 ./mkver_isos.sh <version> <platform> [<platform>...]
+	Where <version> is the version/identifier used above and
+	<platform> is a combination of: w2k8, w2k3, w2k, wxp
+	mkver_isos.sh will then create ISOs for just the platforms specified using
+	the files found in the winpv_stage<version> from step 1.
+
+3 ./cpver_isos.sh  <version>
+	Where <version> is the same as in step 1.
+	This will copy all the special ISOs found in the winpv_isos<versions>
+	dir to Xen100 to a vmdp<version> directory.  The current directory is
+	unlinked and linked to the vmdp<version> directory.
+
+- Before starting a new build with new files
+
+1 Update winpv_base before starting a new version.
+

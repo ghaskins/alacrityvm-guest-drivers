@@ -1,0 +1,421 @@
+<?xml version="1.0"?>
+<dpInst>
+	<deleteBinaries/>
+	<legacyMode/>
+	<suppressAddRemovePrograms/>
+
+    <language code="0x0409">
+        <dpinstTitle>SUSE Drivers for Windows on Xen Installation</dpinstTitle>
+    
+        <welcomeTitle>Welcome to the SUSE Drivers on Xen Installation!</welcomeTitle>
+        <welcomeIntro>This wizard will help you install SUSE Drivers for Windows Virtual Machine.</welcomeIntro>
+    
+        <eulaHeaderTitle>End User License Agreement</eulaHeaderTitle>
+        <eulaYesButton>I &amp;accept this agreement</eulaYesButton>
+        <eulaNoButton>I do &amp;not accept this agreement</eulaNoButton>
+
+        <installHeaderTitle>Installing SUSE Drivers for Windows on Xen...</installHeaderTitle>
+
+        <finishTitle>Congratulations!</finishTitle>
+        <finishText>You've successfully installed SUSE Drivers for your Windows Virtual Machine.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x0804">
+<dpinstTitle>安装用于在 Xen 上运行的 Windows 的 SUSE 驱动程序</dpinstTitle>
+    
+<welcomeTitle>欢迎在 Xen 上安装 SUSE 驱动程序！</welcomeTitle>
+<welcomeIntro>本向导将帮助您安装用于 Windows 虚拟机的 SUSE 驱动程序。</welcomeIntro>
+    
+<eulaHeaderTitle>终端用户许可协议</eulaHeaderTitle>
+<eulaYesButton>我接受本协议(&amp;A)</eulaYesButton>
+<eulaNoButton>我不接受本协议(&amp;N)</eulaNoButton>
+
+<installHeaderTitle>正在安装用于在 Xen 上运行的 Windows 的 SUSE 驱动程序...</installHeaderTitle>
+
+<finishTitle>祝贺您！</finishTitle>
+<finishText>您已成功安装用于 Windows 虚拟机的 SUSE 驱动程序。</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x0404">
+<dpinstTitle>適用於 Windows on Xen 安裝的 SUSE 驅動程式</dpinstTitle>
+    
+<welcomeTitle>歡迎使用 Xen 安裝上的 SUSE 驅動程式﹗</welcomeTitle>
+<welcomeIntro>此精靈將幫助您安裝適用於 Windows 虛擬機器的 SUSE 驅動程式。</welcomeIntro>
+    
+<eulaHeaderTitle>終端使用者授權合約</eulaHeaderTitle>
+<eulaYesButton>我接受此合約(&amp;A)</eulaYesButton>
+<eulaNoButton>我不接受此合約(&amp;N)</eulaNoButton>
+
+<installHeaderTitle>正在安裝適用於 Windows on Xen 的 SUSE 驅動程式...</installHeaderTitle>
+
+<finishTitle>恭喜您﹗</finishTitle>
+<finishText>您已成功安裝適用於 Windows 虛擬機器的 SUSE 驅動程式。</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x0405">
+        <dpinstTitle>SUSE Drivers for Windows on Xen Installation</dpinstTitle>
+    
+        <welcomeTitle>Welcome to the SUSE Drivers on Xen Installation!</welcomeTitle>
+        <welcomeIntro>This wizard will help you install SUSE Drivers for Windows Virtual Machine.</welcomeIntro>
+    
+        <eulaHeaderTitle>End User License Agreement</eulaHeaderTitle>
+        <eulaYesButton>I &amp;accept this agreement</eulaYesButton>
+        <eulaNoButton>I do &amp;not accept this agreement</eulaNoButton>
+
+        <installHeaderTitle>Installing SUSE Drivers for Windows on Xen...</installHeaderTitle>
+
+        <finishTitle>Congratulations!</finishTitle>
+        <finishText>You've successfully installed SUSE Drivers for your Windows Virtual Machine.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x0406">
+        <dpinstTitle>SUSE Drivers for Windows on Xen Installation</dpinstTitle>
+    
+        <welcomeTitle>Welcome to the SUSE Drivers on Xen Installation!</welcomeTitle>
+        <welcomeIntro>This wizard will help you install SUSE Drivers for Windows Virtual Machine.</welcomeIntro>
+    
+        <eulaHeaderTitle>End User License Agreement</eulaHeaderTitle>
+        <eulaYesButton>I &amp;accept this agreement</eulaYesButton>
+        <eulaNoButton>I do &amp;not accept this agreement</eulaNoButton>
+
+        <installHeaderTitle>Installing SUSE Drivers for Windows on Xen...</installHeaderTitle>
+
+        <finishTitle>Congratulations!</finishTitle>
+        <finishText>You've successfully installed SUSE Drivers for your Windows Virtual Machine.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x0407">
+        <dpinstTitle>SUSE-Treiber für Windows in Xen installieren</dpinstTitle>
+    
+        <welcomeTitle>Willkommen bei der Installation der SUSE-Treiber in Xen!</welcomeTitle>
+        <welcomeIntro>Dieser Assistent unterstützt Sie bei der Installation von SUSE-Treibern für Die virtuelle Windows-Maschine.</welcomeIntro>
+    
+        <eulaHeaderTitle>Endbenutzer-Lizenzvereinbarung</eulaHeaderTitle>
+        <eulaYesButton>I &amp;Ich stimme dieser Vereinbarung zu</eulaYesButton>
+        <eulaNoButton>I &amp;Ich stimme dieser Vereinbarung nicht zu</eulaNoButton>
+
+        <installHeaderTitle>SUSE-Treiber für Windows werden in Xen installiert….</installHeaderTitle>
+
+        <finishTitle>Herzlichen Glückwunsch!</finishTitle>
+        <finishText>Sie haben die SUSE-Treiber für Ihre Virtuelle Windows-Maschine erfolgreich installiert.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x0408">
+        <dpinstTitle>SUSE Drivers for Windows on Xen Installation</dpinstTitle>
+    
+        <welcomeTitle>Welcome to the SUSE Drivers on Xen Installation!</welcomeTitle>
+        <welcomeIntro>This wizard will help you install SUSE Drivers for Windows Virtual Machine.</welcomeIntro>
+    
+        <eulaHeaderTitle>End User License Agreement</eulaHeaderTitle>
+        <eulaYesButton>I &amp;accept this agreement</eulaYesButton>
+        <eulaNoButton>I do &amp;not accept this agreement</eulaNoButton>
+
+        <installHeaderTitle>Installing SUSE Drivers for Windows on Xen...</installHeaderTitle>
+
+        <finishTitle>Congratulations!</finishTitle>
+        <finishText>You've successfully installed SUSE Drivers for your Windows Virtual Machine.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x0C0A">
+        <dpinstTitle>Instalación de controladores SUSE para Windows en Xen</dpinstTitle>
+    
+        <welcomeTitle>Bienvenido a la instalación de controladores SUSE en Xen.</welcomeTitle>
+        <welcomeIntro>Este asistente le ayudará a instalar controladores SUSE para máquinas virtuales Windows.</welcomeIntro>
+    
+        <eulaHeaderTitle>Acuerdo de licencia del usuario final</eulaHeaderTitle>
+        <eulaYesButton>&amp;Acepto el acuerdo</eulaYesButton>
+        <eulaNoButton>&amp;No acepto el acuerdo</eulaNoButton>
+
+        <installHeaderTitle>Instalando controladores SUSE para Windows en Xen...</installHeaderTitle>
+
+        <finishTitle>Enhorabuena.</finishTitle>
+        <finishText>Ha instalado correctamente los controladores SUSE para la máquina virtual Windows.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x040B">
+        <dpinstTitle>SUSE Drivers for Windows on Xen Installation</dpinstTitle>
+    
+        <welcomeTitle>Welcome to the SUSE Drivers on Xen Installation!</welcomeTitle>
+        <welcomeIntro>This wizard will help you install SUSE Drivers for Windows Virtual Machine.</welcomeIntro>
+    
+        <eulaHeaderTitle>End User License Agreement</eulaHeaderTitle>
+        <eulaYesButton>I &amp;accept this agreement</eulaYesButton>
+        <eulaNoButton>I do &amp;not accept this agreement</eulaNoButton>
+
+        <installHeaderTitle>Installing SUSE Drivers for Windows on Xen...</installHeaderTitle>
+
+        <finishTitle>Congratulations!</finishTitle>
+        <finishText>You've successfully installed SUSE Drivers for your Windows Virtual Machine.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x040C">
+        <dpinstTitle>Installation des pilotes SUSE pour Windows sur Xen</dpinstTitle>
+    
+        <welcomeTitle>Bienvenue dans le programme d'installation des pilotes SUSE sur Xen !</welcomeTitle>
+        <welcomeIntro>Cet Assistant doit vous aider à installer les pilotes SUSE pour la machine virtuelle Windows.</welcomeIntro>
+    
+        <eulaHeaderTitle>Contrat de Licence Utilisateur Final</eulaHeaderTitle>
+        <eulaYesButton>J'&amp;accepte cet accord</eulaYesButton>
+        <eulaNoButton>Je &amp;n'accepte pas cet accord</eulaNoButton>
+
+        <installHeaderTitle>Installation des pilotes SUSE pour Windows sur Xen...</installHeaderTitle>
+
+        <finishTitle>Félicitations !</finishTitle>
+        <finishText>Vous avez installé les pilotes SUSE pour votre machine virtuelle Windows.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x040D">
+        <dpinstTitle>SUSE Drivers for Windows on Xen Installation</dpinstTitle>
+    
+        <welcomeTitle>Welcome to the SUSE Drivers on Xen Installation!</welcomeTitle>
+        <welcomeIntro>This wizard will help you install SUSE Drivers for Windows Virtual Machine.</welcomeIntro>
+    
+        <eulaHeaderTitle>End User License Agreement</eulaHeaderTitle>
+        <eulaYesButton>I &amp;accept this agreement</eulaYesButton>
+        <eulaNoButton>I do &amp;not accept this agreement</eulaNoButton>
+
+        <installHeaderTitle>Installing SUSE Drivers for Windows on Xen...</installHeaderTitle>
+
+        <finishTitle>Congratulations!</finishTitle>
+        <finishText>You've successfully installed SUSE Drivers for your Windows Virtual Machine.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x040E">
+        <dpinstTitle>SUSE Drivers for Windows on Xen Installation</dpinstTitle>
+    
+        <welcomeTitle>Welcome to the SUSE Drivers on Xen Installation!</welcomeTitle>
+        <welcomeIntro>This wizard will help you install SUSE Drivers for Windows Virtual Machine.</welcomeIntro>
+    
+        <eulaHeaderTitle>End User License Agreement</eulaHeaderTitle>
+        <eulaYesButton>I &amp;accept this agreement</eulaYesButton>
+        <eulaNoButton>I do &amp;not accept this agreement</eulaNoButton>
+
+        <installHeaderTitle>Installing SUSE Drivers for Windows on Xen...</installHeaderTitle>
+
+        <finishTitle>Congratulations!</finishTitle>
+        <finishText>You've successfully installed SUSE Drivers for your Windows Virtual Machine.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x0410">
+        <dpinstTitle>Installazione driver SUSE per Windows su Xen</dpinstTitle>
+    
+        <welcomeTitle>Installazione driver SUSE su Xen</welcomeTitle>
+        <welcomeIntro>Questa procedura guidata consente di installare i driver SUSE per Windows Virtual Machine.</welcomeIntro>
+    
+        <eulaHeaderTitle>Contratto di licenza per l’utente finale</eulaHeaderTitle>
+        <eulaYesButton>&amp;Accetto questo contratto</eulaYesButton>
+        <eulaNoButton>&amp;Non accetto questo contratto</eulaNoButton>
+
+        <installHeaderTitle>Installazione driver SUSE per Windows su Xen in corso...</installHeaderTitle>
+
+        <finishTitle>Congratulazioni.</finishTitle>
+        <finishText>L’installazione dei driver SUSE per Windows Virtual Machine è stata completata.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x0411">
+        <dpinstTitle>XenへのWindows用SUSEドライバのインストール</dpinstTitle>
+
+        <welcomeTitle>XenへのSUSEドライバのインストールにようこそ</welcomeTitle>
+        <welcomeIntro>このウィザードを使用すると、Windowsの仮想マシン用のSUSEドライバをインストールできます。</welcomeIntro>
+
+        <eulaHeaderTitle>エンドユーザライセンス契約</eulaHeaderTitle>
+        <eulaYesButton>この契約に同意します(&amp;A)</eulaYesButton>
+        <eulaNoButton>この契約に同意しません(&amp;N)</eulaNoButton>
+
+        <installHeaderTitle>Windows用SUSEドライバをXenにインストールしています...</installHeaderTitle>
+
+        <finishTitle>完了しました!</finishTitle>
+        <finishText>Windows仮想マシン用のSUSEドライバが正常にインストールされました。</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x0412">
+        <dpinstTitle>Xen에서 Windows용 SUSE 드라이버 설치</dpinstTitle>
+    
+        <welcomeTitle>Xen에서 SUSE 드라이버 설치에 오신 것을 환영합니다!</welcomeTitle>
+        <welcomeIntro>이 마법사는 Windows 가상 머신용 SUSE 드라이버 설치를 도와 줍니다.</welcomeIntro>
+    
+        <eulaHeaderTitle>최종 사용자 계약</eulaHeaderTitle>
+        <eulaYesButton>본인은 &amp;이 계약에 동의합니다.</eulaYesButton>
+        <eulaNoButton>본인은 &amp;이 계약에 동의하지 않습니다.</eulaNoButton>
+
+        <installHeaderTitle>Xen에서 Windows용 SUSE 드라이버 설치 중...</installHeaderTitle>
+
+        <finishTitle>축하합니다!</finishTitle>
+        <finishText>Windows 가상 머신용 SUSE 드라이버를 성공적으로 설치했습니다.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x0414">
+        <dpinstTitle>SUSE Drivers for Windows on Xen Installation</dpinstTitle>
+    
+        <welcomeTitle>Welcome to the SUSE Drivers on Xen Installation!</welcomeTitle>
+        <welcomeIntro>This wizard will help you install SUSE Drivers for Windows Virtual Machine.</welcomeIntro>
+    
+        <eulaHeaderTitle>End User License Agreement</eulaHeaderTitle>
+        <eulaYesButton>I &amp;accept this agreement</eulaYesButton>
+        <eulaNoButton>I do &amp;not accept this agreement</eulaNoButton>
+
+        <installHeaderTitle>Installing SUSE Drivers for Windows on Xen...</installHeaderTitle>
+
+        <finishTitle>Congratulations!</finishTitle>
+        <finishText>You've successfully installed SUSE Drivers for your Windows Virtual Machine.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x0413">
+        <dpinstTitle>SUSE Drivers for Windows on Xen Installation</dpinstTitle>
+    
+        <welcomeTitle>Welcome to the SUSE Drivers on Xen Installation!</welcomeTitle>
+        <welcomeIntro>This wizard will help you install SUSE Drivers for Windows Virtual Machine.</welcomeIntro>
+    
+        <eulaHeaderTitle>End User License Agreement</eulaHeaderTitle>
+        <eulaYesButton>I &amp;accept this agreement</eulaYesButton>
+        <eulaNoButton>I do &amp;not accept this agreement</eulaNoButton>
+
+        <installHeaderTitle>Installing SUSE Drivers for Windows on Xen...</installHeaderTitle>
+
+        <finishTitle>Congratulations!</finishTitle>
+        <finishText>You've successfully installed SUSE Drivers for your Windows Virtual Machine.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x0415">
+        <dpinstTitle>SUSE Drivers for Windows on Xen Installation</dpinstTitle>
+    
+        <welcomeTitle>Welcome to the SUSE Drivers on Xen Installation!</welcomeTitle>
+        <welcomeIntro>This wizard will help you install SUSE Drivers for Windows Virtual Machine.</welcomeIntro>
+    
+        <eulaHeaderTitle>End User License Agreement</eulaHeaderTitle>
+        <eulaYesButton>I &amp;accept this agreement</eulaYesButton>
+        <eulaNoButton>I do &amp;not accept this agreement</eulaNoButton>
+
+        <installHeaderTitle>Installing SUSE Drivers for Windows on Xen...</installHeaderTitle>
+
+        <finishTitle>Congratulations!</finishTitle>
+        <finishText>You've successfully installed SUSE Drivers for your Windows Virtual Machine.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x0416">
+        <dpinstTitle>Instalação de Drivers SUSE para Windows no Xen</dpinstTitle>
+    
+        <welcomeTitle>Bem-vindo à Instalação de Drivers SUSE no Xen!</welcomeTitle>
+        <welcomeIntro>Este assistente o ajudará a instalar os Drivers SUSE para Windows Virtual Machine.</welcomeIntro>
+    
+        <eulaHeaderTitle>Contrato de Licença do Usuário Final</eulaHeaderTitle>
+        <eulaYesButton>&amp;Aceito este contrato</eulaYesButton>
+        <eulaNoButton>&amp;Não aceito este contrato</eulaNoButton>
+
+        <installHeaderTitle>Instalando Drivers SUSE para Windows no Xen...</installHeaderTitle>
+
+        <finishTitle>Parabéns!</finishTitle>
+        <finishText>Você instalou com sucesso os Drivers SUSE para seu Windows Virtual Machine.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x0816">
+        <dpinstTitle>Instalação de Drivers SUSE para Windows no Xen</dpinstTitle>
+    
+        <welcomeTitle>Bem-vindo à Instalação de Drivers SUSE no Xen!</welcomeTitle>
+        <welcomeIntro>Este assistente o ajudará a instalar os Drivers SUSE para Windows Virtual Machine.</welcomeIntro>
+    
+        <eulaHeaderTitle>Contrato de Licença do Usuário Final</eulaHeaderTitle>
+        <eulaYesButton>&amp;Aceito este contrato</eulaYesButton>
+        <eulaNoButton>&amp;Não aceito este contrato</eulaNoButton>
+
+        <installHeaderTitle>Instalando Drivers SUSE para Windows no Xen...</installHeaderTitle>
+
+        <finishTitle>Parabéns!</finishTitle>
+        <finishText>Você instalou com sucesso os Drivers SUSE para seu Windows Virtual Machine.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x0419">
+        <dpinstTitle>Ð£ÑÑ‚Ð°Ð½Ð¾Ð²ÐºÐ° Ð´Ñ€Ð°Ð¹Ð²ÐµÑ€Ð¾Ð² SUSE Ð´Ð»Ñ Windows Ð² Xen</dpinstTitle>
+
+        <welcomeTitle>Ð”Ð¾Ð±Ñ€Ð¾ Ð¿Ð¾Ð¶Ð°Ð»Ð¾Ð²Ð°Ñ‚ÑŒ Ð² Ð¿Ñ€Ð¾Ð³Ñ€Ð°Ð¼Ð¼Ñƒ ÑƒÑÑ‚Ð°Ð½Ð¾Ð²ÐºÐ¸ Ð´Ñ€Ð°Ð¹Ð²ÐµÑ€Ð¾Ð² SUSE Ð² Xen!</welcomeTitle>
+        <welcomeIntro>Ð­Ñ‚Ð¾Ñ‚ Ð¼Ð°ÑÑ‚ÐµÑ€ Ð¿Ð¾Ð¼Ð¾Ð¶ÐµÑ‚ ÑƒÑÑ‚Ð°Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ Ð´Ñ€Ð°Ð¹Ð²ÐµÑ€Ñ‹ SUSE Ð´Ð»Ñ Ð²Ð¸Ñ€Ñ‚ÑƒÐ°Ð»ÑŒÐ½Ð¾Ð¹ Ð¼Ð°ÑˆÐ¸Ð½Ñ‹ Windows.</welcomeIntro>
+
+        <eulaHeaderTitle>Ð›Ð¸Ñ†ÐµÐ½Ð·Ð¸Ð¾Ð½Ð½Ð¾Ðµ ÑÐ¾Ð³Ð»Ð°ÑˆÐµÐ½Ð¸Ðµ</eulaHeaderTitle>
+        <eulaYesButton>Ð¯ &amp;Ð¿Ñ€Ð¸Ð½Ð¸Ð¼Ð°ÑŽ ÑƒÑÐ»Ð¾Ð²Ð¸Ñ Ð´Ð°Ð½Ð½Ð¾Ð³Ð¾ ÑÐ¾Ð³Ð»Ð°ÑˆÐµÐ½Ð¸Ñ</eulaYesButton>
+        <eulaNoButton>Ð¯ &amp;Ð½Ðµ Ð¿Ñ€Ð¸Ð½Ð¸Ð¼Ð°ÑŽ ÑƒÑÐ»Ð¾Ð²Ð¸Ñ Ð´Ð°Ð½Ð½Ð¾Ð³Ð¾ ÑÐ¾Ð³Ð»Ð°ÑˆÐµÐ½Ð¸Ñ</eulaNoButton>
+
+        <installHeaderTitle>Ð˜Ð´ÐµÑ‚ ÑƒÑÑ‚Ð°Ð½Ð¾Ð²ÐºÐ° Ð´Ñ€Ð°Ð¹Ð²ÐµÑ€Ð¾Ð² SUSE Ð´Ð»Ñ ÐžÐ¡ Windows Ð² Xen...</installHeaderTitle>
+
+        <finishTitle>ÐŸÐ¾Ð·Ð´Ñ€Ð°Ð²Ð»ÑÐµÐ¼!</finishTitle>
+        <finishText>Ð”Ñ€Ð°Ð¹Ð²ÐµÑ€Ñ‹ SUSE Ð´Ð»Ñ Ð²Ð¸Ñ€Ñ‚ÑƒÐ°Ð»ÑŒÐ½Ð¾Ð¹ Ð¼Ð°ÑˆÐ¸Ð½Ñ‹ Windows ÑƒÑÐ¿ÐµÑˆÐ½Ð¾ ÑƒÑÑ‚Ð°Ð½Ð¾Ð²Ð»ÐµÐ½Ñ‹.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x041D">
+        <dpinstTitle>SUSE Drivers for Windows on Xen Installation</dpinstTitle>
+    
+        <welcomeTitle>Welcome to the SUSE Drivers on Xen Installation!</welcomeTitle>
+        <welcomeIntro>This wizard will help you install SUSE Drivers for Windows Virtual Machine.</welcomeIntro>
+    
+        <eulaHeaderTitle>End User License Agreement</eulaHeaderTitle>
+        <eulaYesButton>I &amp;accept this agreement</eulaYesButton>
+        <eulaNoButton>I do &amp;not accept this agreement</eulaNoButton>
+
+        <installHeaderTitle>Installing SUSE Drivers for Windows on Xen...</installHeaderTitle>
+
+        <finishTitle>Congratulations!</finishTitle>
+        <finishText>You've successfully installed SUSE Drivers for your Windows Virtual Machine.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+    <language code="0x041F">
+        <dpinstTitle>SUSE Drivers for Windows on Xen Installation</dpinstTitle>
+    
+        <welcomeTitle>Welcome to the SUSE Drivers on Xen Installation!</welcomeTitle>
+        <welcomeIntro>This wizard will help you install SUSE Drivers for Windows Virtual Machine.</welcomeIntro>
+    
+        <eulaHeaderTitle>End User License Agreement</eulaHeaderTitle>
+        <eulaYesButton>I &amp;accept this agreement</eulaYesButton>
+        <eulaNoButton>I do &amp;not accept this agreement</eulaNoButton>
+
+        <installHeaderTitle>Installing SUSE Drivers for Windows on Xen...</installHeaderTitle>
+
+        <finishTitle>Congratulations!</finishTitle>
+        <finishText>You've successfully installed SUSE Drivers for your Windows Virtual Machine.</finishText>
+
+        <eula type="txt" path="vmdpeula.txt" />
+    </language>
+
+</dpInst>
