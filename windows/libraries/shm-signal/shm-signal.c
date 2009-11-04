@@ -30,6 +30,9 @@ ShmSignalEnable(struct shm_signal *s, int flags)
 
   irq->enabled = 1;
   KeMemoryBarrier();
+
+  if ((irq->dirty || irq->pending) && s->notifier)
+    KeInsertQueueDpc(s->notifier, NULL, NULL);
 }
 
 __declspec(dllexport) void
@@ -89,8 +92,6 @@ _ShmSignalWakeup(struct shm_signal *s)
   struct shm_signal_irq *irq = &s->desc->irq[s->locale];
   int dirty;
   
-  s->in_wakeup = TRUE;
-  
   /*
    * The outer loop protects against race conditions between
    * irq->dirty and irq->pending updates
@@ -109,7 +110,7 @@ _ShmSignalWakeup(struct shm_signal *s)
       KeMemoryBarrier();
       
       if (s->notifier)
-	s->notifier->signal(s->notifier);
+	KeInsertQueueDpc(s->notifier, NULL, NULL);
       
       dirty = irq->dirty;
       KeMemoryBarrier();
@@ -131,8 +132,6 @@ _ShmSignalWakeup(struct shm_signal *s)
     KeMemoryBarrier();
     
   }
-  
-  s->in_wakeup = FALSE;
 }
 
 __declspec(dllexport) void

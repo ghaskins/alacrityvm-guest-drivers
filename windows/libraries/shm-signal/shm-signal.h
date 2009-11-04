@@ -54,10 +54,6 @@ struct shm_signal_desc {
 
 /* --- END SHARED STRUCTURES --- */
 
-struct shm_signal_notifier {
-  void (*signal)(struct shm_signal_notifier *);
-};
-
 struct shm_signal;
 
 struct shm_signal_ops {
@@ -67,10 +63,9 @@ struct shm_signal_ops {
 
 struct shm_signal {
   enum shm_signal_locality    locale;
-  BOOLEAN                     in_wakeup;
   struct shm_signal_ops      *ops;
   struct shm_signal_desc     *desc;
-  struct shm_signal_notifier *notifier;
+  PRKDPC                      notifier;
 };
 
  /*
