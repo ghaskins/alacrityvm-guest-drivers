@@ -1,0 +1,112 @@
+;/*++
+;
+;Copyright (c) 1990-1999 Microsoft Corporation All rights Reserved
+;
+;Module Name:
+;
+;    SHMSIGNAL.INF
+;
+;Abstract:
+;    INF file for installing toaster bus enumerator driver
+;
+;Installation Notes:
+;    Using Devcon: Type "devcon install shmsignal.inf root\shmsignal" to install
+;
+;--*/
+[Version]
+Signature="$WINDOWS NT$"
+Class=System
+ClassGuid={4D36E97D-E325-11CE-BFC1-08002BE10318}
+Provider=%MSFT%
+DriverVer=06/17/1999, 5.00.2064
+CatalogFile=KmdfSamples.cat
+
+
+[DestinationDirs]
+DefaultDestDir = 12
+
+[SourceDisksNames]
+1 = %DiskId1%,,,""
+
+[SourceDisksFiles]
+shmsignal.sys  = 1,,
+
+;*****************************************
+; ShmSignal  Install Section
+;*****************************************
+
+[Manufacturer]
+%StdMfg%=Standard,NT$ARCH$
+
+; For Win2K because it cannot parse decorated sections
+[Standard]
+;
+; These are the toaster bus pnp ids
+;
+%ShmSignal.DeviceDesc%=ShmSignal_Device, root\shmsignal
+
+; For XP and later
+[Standard.NT$ARCH$]
+%ShmSignal.DeviceDesc%=ShmSignal_Device, root\shmsignal
+
+[ShmSignal_Device.NT]
+CopyFiles=Drivers_Dir
+
+[ShmSignal_Device.NT.HW]
+AddReg=ShmSignal_Device.NT.AddReg
+
+[ShmSignal_Device.NT.AddReg]                            
+HKR,,DeviceCharacteristics,0x10001,0x0100         ; Use same security checks on relative opens
+HKR,,Security,,"D:P(A;;GA;;;BA)(A;;GA;;;SY)"      ; Allow generic-all access to Built-in administrators and Local system 
+
+[Drivers_Dir]
+shmsignal.sys
+
+
+;-------------- Service installation
+[ShmSignal_Device.NT.Services]
+AddService = shmsignal,%SPSVCINST_ASSOCSERVICE%, shmsignal_Service_Inst
+
+; -------------- shmsignal driver install sections
+[shmsignal_Service_Inst]
+DisplayName    = %shmsignal.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START 
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\shmsignal.sys
+LoadOrderGroup = Extended Base
+
+
+;
+;--- ShmSignal_Device Coinstaller installation ------
+;
+[DestinationDirs]
+ShmSignal_Device_CoInstaller_CopyFiles = 11
+
+[ShmSignal_Device.NT.CoInstallers]
+AddReg=ShmSignal_Device_CoInstaller_AddReg
+CopyFiles=ShmSignal_Device_CoInstaller_CopyFiles
+
+[ShmSignal_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[ShmSignal_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[SourceDisksFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+[ShmSignal_Device.NT.Wdf]
+KmdfService = shmsignal, shmsignal_wdfsect
+[shmsignal_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+MSFT = "Microsoft"
+StdMfg = "(Standard system devices)"
+DiskId1 = "Shared-Memory Signal Library Installation Disk #1"
+ShmSignal.DeviceDesc = "Shared-Memory Signal Library"
+shmsignal.SVCDESC = "Shared-Memory Signal Library"
+
