@@ -31,8 +31,7 @@ ShmSignalEnable(struct shm_signal *s, int flags)
   irq->enabled = 1;
   KeMemoryBarrier();
 
-  if ((irq->dirty || irq->pending) && s->notifier)
-    KeInsertQueueDpc(s->notifier, NULL, NULL);
+  _ShmSignalWakeup(s);
 }
 
 __declspec(dllexport) void
@@ -42,6 +41,17 @@ ShmSignalDisable(struct shm_signal *s, int flags)
 
   irq->enabled = 0;
   KeMemoryBarrier();
+}
+
+__declspec(dllexport) void
+ShmSignalEoi(struct shm_signal *s, int flags)
+{
+  struct shm_signal_irq *irq = &s->desc->irq[s->locale];
+
+  irq->pending = 0;
+  KeMemoryBarrier();
+
+  _ShmSignalWakeup(s);
 }
 
 /*
@@ -96,41 +106,12 @@ _ShmSignalWakeup(struct shm_signal *s)
    * The outer loop protects against race conditions between
    * irq->dirty and irq->pending updates
    */
-  while (irq->enabled && (irq->dirty || irq->pending)) {
-    
-    /*
-     * Run until we completely exhaust irq->dirty (it may
-     * be re-dirtied by the remote side while we are in the
-     * callback).  We let "pending" remain untouched until we have
-     * processed them all so that the remote side knows we do not
-     * need a new notification (yet).
-     */
-    do {
-      irq->dirty = 0;
-      KeMemoryBarrier();
-      
-      if (s->notifier)
-	KeInsertQueueDpc(s->notifier, NULL, NULL);
-      
-      dirty = irq->dirty;
-      KeMemoryBarrier();
-      
-    } while (irq->enabled && dirty);
-    
-    KeMemoryBarrierWithoutFence();
-    
-    /*
-     * We can finally acknowledge the notification by clearing
-     * "pending" after all of the dirty memory has been processed
-     * Races against this clearing are handled by the outer loop.
-     * Subsequent iterations of this loop will execute with
-     * pending=0 potentially leading to future spurious
-     * notifications, but this is an acceptable tradeoff as this
-     * will be rare and harmless.
-     */
-    irq->pending = 0;
+  if (irq->enabled && (irq->dirty || irq->pending)) {
+    irq->dirty = 0;
     KeMemoryBarrier();
-    
+      
+    if (s->notifier)
+      KeInsertQueueDpc(s->notifier, NULL, NULL);
   }
 }
 

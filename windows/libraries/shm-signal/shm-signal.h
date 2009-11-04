@@ -117,6 +117,19 @@ __declspec(dllexport) void ShmSignalEnable(struct shm_signal *s, int flags);
 __declspec(dllexport) void ShmSignalDisable(struct shm_signal *s, int flags);
 
 /**
+ * ShmSignalEoi() - denotes the "end of interrupt" condition for a SHM_SIGNAL
+ * @s:        SHM_SIGNAL context
+ * @flags:      Reserved for future use, must be 0
+ *
+ * Denotes that processing on the SHM_SIGNAL notification has completed, possibly
+ * reinjecting more signals if present.
+ *
+ * This is synonymous with EOI an interrupt.
+ *
+ **/
+__declspec(dllexport) void ShmSignalEoi(struct shm_signal *s, int flags);
+
+/**
  * ShmSignalInject() - notify the remote side about shm changes
  * @s:        SHM_SIGNAL context
  * @flags:      Reserved for future use, must be 0
