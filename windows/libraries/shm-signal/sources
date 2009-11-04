@@ -7,6 +7,7 @@ KMDF_VERSION_MAJOR=1
 
 INF_NAME=shm-signal
 
+INCLUDES = ../../include
 TARGETLIBS=$(TARGETLIBS) \
            $(DDK_LIB_PATH)\ntstrsafe.lib
 
