@@ -1,5 +1,5 @@
-obj-m = shm_signal.o
-obj-m = ioq.o
+obj-m += shm_signal.o
+obj-m += ioq.o
 
 vbus-proxy-objs += bus-proxy.o
 obj-m += vbus-proxy.o
@@ -7,12 +7,8 @@ obj-m += vbus-proxy.o
 vbus-pcibridge-objs += pci-bridge.o
 obj-m += vbus-pcibridge.o
 
-obj-m += vbus-enet.o
+#obj-m += vbus-enet.o
 
 KVERSION = $(shell uname -r)
 
-all:
-	make -C /lib/modules/$(KVERSION)/build M=$(PWD) modules
 
-clean:
-	make -C /lib/modules/$(KVERSION)/build M=$(PWD) clean
