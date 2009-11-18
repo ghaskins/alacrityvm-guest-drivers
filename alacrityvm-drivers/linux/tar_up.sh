@@ -35,13 +35,12 @@ HDRS="shm_signal.h ioq.h vbus_driver.h vbus_pci.h venet.h"
 SRCS="lib/shm_signal.c lib/ioq.c drivers/vbus/bus-proxy.c drivers/vbus/pci-bridge.c drivers/net/vbus-enet.c"
 LOCALS="Makefile.base alacrityvm-drivers.spec"
 
-OUTPUT="alacrityvm"
-mkdir -p $TMP/$OUTPUT/linux
+mkdir -p $TMP/linux
 
 for i in $HDRS
 do
 	SRC=$KSRC/include/linux/$i
-	DST=$TMP/$OUTPUT/linux/$i
+	DST=$TMP/linux/$i
 	echo "Copy from $SRC to $DST" >&2
 	cp $SRC $DST
 done
@@ -49,7 +48,7 @@ done
 for i in $SRCS
 do
 	SRC=$KSRC/$i
-	DST=$TMP/$OUTPUT/$(basename $i)
+	DST=$TMP/$(basename $i)
 	echo "Copy from $SRC to $DST" >&2
 	cp $SRC $DST
 done
@@ -57,12 +56,12 @@ done
 for i in $LOCALS
 do
 	SRC=$EXECDIR/$i
-	DST=$TMP/$OUTPUT/$(echo $i | sed 's/.base//')
+	DST=$TMP/$(echo $i | sed 's/.base//')
 	echo "Copy from $SRC to $DST" >&2
 	cp $SRC $DST
 done
 
 cd $TMP
-tar -c $OUTPUT/*
+tar -c *
 
 cleanup
