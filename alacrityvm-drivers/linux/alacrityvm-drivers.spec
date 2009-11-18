@@ -8,7 +8,7 @@ Release: %{rpmrel}
 Group: System/Kernel
 Source: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: kernel-source kernel-syms
+BuildRequires: kernel-source kernel-syms module-init-tools
 %suse_kernel_module_package ec2 xen xenpae vmi um 
 
 %description
@@ -51,6 +51,12 @@ export INSTALL_MOD_PATH=$RPM_BUILD_ROOT
 export INSTALL_MOD_DIR=updates  
 for flavor in %flavors_to_build; do 
     make -C /usr/src/linux-obj/%_target_cpu/$flavor modules_install M=$PWD/obj/$flavor 
-done 
+done
+
+%post
+/sbin/depmod -a 
+
+%postun
+/sbin/depmod -a 
 
 %changelog
