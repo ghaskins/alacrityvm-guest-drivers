@@ -16,6 +16,7 @@ $(OBJDIR)/$(NAME)-$(VERSION):
 $(RPMBIN): $(OBJDIR)/$(NAME)-$(VERSION)
 	@./tar_up.sh $(KSRC) | (cd $(OBJDIR)/$(NAME)-$(VERSION); tar xf -)
 	@cat $(NAME).spec | sed -e 's/_RPM_VERSION/$(VERSION)/;s/_RPM_RELEASE/$(RELEASE)/' > $(OBJDIR)/$(NAME)-$(VERSION)/$(NAME).spec
+	cp vbus-enet.patch $(OBJDIR)
 	(cd $(OBJDIR); tar cvz $(NAME)-$(VERSION)) > $(RPMBIN)
 
 srcrpm: $(RPMBIN)

@@ -1,0 +1,36 @@
+--- /home/ghaskins/sandbox/git/fabric/linux-2.6/drivers/net/vbus-enet.c	2009-11-19 10:01:16.000000000 -0500
++++ vbus-enet.c	2009-11-19 10:04:24.000000000 -0500
+@@ -1384,17 +1384,6 @@
+ 	.get_link    = ethtool_op_get_link,
+ };
+ 
+-static const struct net_device_ops vbus_enet_netdev_ops = {
+-	.ndo_open            = vbus_enet_open,
+-	.ndo_stop            = vbus_enet_stop,
+-	.ndo_set_config      = vbus_enet_config,
+-	.ndo_start_xmit      = vbus_enet_tx_start,
+-	.ndo_change_mtu	     = vbus_enet_change_mtu,
+-	.ndo_tx_timeout      = vbus_enet_timeout,
+-	.ndo_set_mac_address = eth_mac_addr,
+-	.ndo_validate_addr   = eth_validate_addr,
+-};
+-
+ /*
+  * This is called whenever a new vbus_device_proxy is added to the vbus
+  * with the matching VENET_ID
+@@ -1469,8 +1458,13 @@
+ 		ioq_notify_enable(priv->tx.veq.queue, 0);
+ 	}
+ 
+-	dev->netdev_ops     = &vbus_enet_netdev_ops;
+-	dev->watchdog_timeo = 5 * HZ;
++	dev->open            = vbus_enet_open,
++	dev->stop            = vbus_enet_stop,
++	dev->set_config      = vbus_enet_config,
++	dev->hard_start_xmit = vbus_enet_tx_start,
++	dev->change_mtu	     = vbus_enet_change_mtu,
++	dev->tx_timeout      = vbus_enet_timeout,
++	dev->watchdog_timeo  = 5 * HZ;
+ 	SET_ETHTOOL_OPS(dev, &vbus_enet_ethtool_ops);
+ 	SET_NETDEV_DEV(dev, &vdev->dev);
+ 

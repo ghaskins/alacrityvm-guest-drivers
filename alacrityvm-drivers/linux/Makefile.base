@@ -7,7 +7,7 @@ obj-m += vbus-proxy.o
 vbus-pcibridge-objs += pci-bridge.o
 obj-m += vbus-pcibridge.o
 
-#obj-m += vbus-enet.o
+obj-m += vbus-enet.o
 
 KVERSION = $(shell uname -r)
 
