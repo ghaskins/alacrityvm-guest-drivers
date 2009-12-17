@@ -1,0 +1,113 @@
+;/*++
+;
+;Copyright (c) 2009 Novell Inc.
+;
+;Module Name:
+;
+;    vbus.inf
+;
+;Abstract:
+;    INF file for installing vbus driver
+;
+;Installation Notes:
+;    Type "devcon install vbus.inf PCI\VEN_11da&DEV_2000" to install
+;
+;--*/
+[Version]
+Signature    = "$WINDOWS NT$"
+Class        = System
+ClassGuid    = {4d36e97d-e325-11ce-bfc1-08002be10318}
+Provider     = %NOVL%
+DriverVer    = 12/14/2009,1.0.0.0
+CatalogFile  = vbus.cat
+
+[DestinationDirs]
+DefaultDestDir = 12
+
+[SourceDisksNames]
+1 = %DiskId1%,,,""
+
+[SourceDisksFiles]
+vbus.sys  = 1,,
+
+;*****************************************
+; Vbus  Install Section
+;*****************************************
+
+[Manufacturer]
+%NOVL% = Vbus, NTx86, NTAMD64
+
+; For XP and later
+[Vbus.NTx86]
+%Vbus.DeviceDesc%   = Vbus_Device, PCI\VEN_11DA&DEV_2000
+
+[Vbus.NTAMD64]
+%Vbus.DeviceDesc%   = Vbus_Device, PCI\VEN_11DA&DEV_2000
+
+[Vbus_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Vbus_Device.NT.HW]
+AddReg=Vbus_Device.NT.AddReg
+
+[Vbus_Device.NT.AddReg]                            
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+HKR,,DeviceCharacteristics,0x10001,0x0100
+HKR,,Security,,"D:P(A;;GA;;;SY)(A;;GA;;;BA)"
+; MSI enablement.
+HKR,,Interrupt Management,,0x00000010
+HKR,,Interrupt Management\MessageSignaledInterruptProperties,,0x00000010
+HKR,,Interrupt Management\MessageSignaledInterruptProperties,MSISupported,0x00010001,1
+
+[Drivers_Dir]
+vbus.sys
+
+
+;-------------- Service installation
+[Vbus_Device.NT.Services]
+AddService = vbus,%SPSVCINST_ASSOCSERVICE%,vbus_Service_Inst
+
+; -------------- vbus driver install sections
+[vbus_Service_Inst]
+DisplayName    = %Vbus.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START 
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\vbus.sys
+;LoadOrderGroup = Extended Base
+
+
+;
+;--- Vbus_Device Coinstaller installation ------
+;
+[DestinationDirs]
+Vbus_Device_CoInstaller_CopyFiles = 11
+
+[Vbus_Device.NT.CoInstallers]
+AddReg=Vbus_Device_CoInstaller_AddReg
+CopyFiles=Vbus_Device_CoInstaller_CopyFiles
+
+[Vbus_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[Vbus_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[SourceDisksFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+[Vbus_Device.NT.Wdf]
+KmdfService = vbus,vbus_wdfsect
+[vbus_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+NOVL = "Novell"
+DiskId1 = "VBus Installation Disk #1"
+Vbus.DeviceDesc = "VBus Enumerator"
+Vbus.SVCDESC = "VBus Enumerator for vbus stuff"
+ClassName 	= "Vbus class name"
+

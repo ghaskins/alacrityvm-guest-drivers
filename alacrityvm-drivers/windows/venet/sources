@@ -1,0 +1,32 @@
+TARGETNAME=venet
+TARGETTYPE=DRIVER
+TARGET_DESTINATION=wdf
+
+PRECOMPILED_INCLUDE=precomp.h
+
+KMDF_VERSION_MAJOR=1
+
+INCLUDES=$(INCLUDES); ../include ; $(DDK_INC_PATH)
+
+INF_NAME=netnovl
+
+NTTARGETFILE1=$(OBJ_PATH)\$(O)\$(INF_NAME).inf
+
+
+MSC_WARNING_LEVEL=/W4
+
+#
+# NDIS 6.0 driver
+#
+C_DEFINES=$(C_DEFINES) -DNDIS60_MINIPORT=1 -DNDIS60=1 
+C_DEFINES=$(C_DEFINES) -DNDIS_MINIPORT_DRIVER -DBINARY_COMPATIBLE=0
+
+
+SOURCES = venet.c \
+	oids.c  \
+	sendrcv.c \
+	log.c \
+	venet.rc 
+
+TARGETLIBS=$(DDK_LIB_PATH)\ndis.lib \
+           $(DDK_LIB_PATH)\ntstrsafe.lib

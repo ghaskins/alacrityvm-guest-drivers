@@ -1,0 +1,146 @@
+;
+; Copyright (c) 2009 Novell Inc.
+;
+; INF file for installing the Novell Virtual Ethernet Adapter. 
+;
+;
+
+[version]
+Signature   = "$Windows NT$"
+Class       = Net
+ClassGUID   = {4d36e972-e325-11ce-bfc1-08002be10318}
+Provider    = %Novl%
+CatalogFile = venet.cat
+DriverVer   = 12/14/2009,1.0.0000.00000
+
+
+[Manufacturer]
+%Novl%     = Novl, NTamd64, NTx86
+
+
+[ControlFlags]
+ExcludeFromSelect = *
+
+
+[Novl.NTx86]
+; DisplayName              Section         DeviceID
+; -----------              -------         --------
+%Novl.Device_desc%       = novell.ndi,     VBUS\test_dev_10
+
+[Novl.NTamd64]
+; DisplayName              Section         DeviceID
+; -----------              -------         --------
+%Novl.Device_desc%       = novell.ndi,     VBUS\test_dev_10
+
+[novell.ndi.NTx86]
+Characteristics 	= 0x81
+AddReg			= venet.reg
+CopyFiles       	= novell.CopyFiles
+*IfType         	= 6  ; IF_TYPE_ETHERNET_CSMACD 
+*MediaType      	= 0 
+*PhysicalMediaType	= 14 
+
+;*MediaType      	= 0  ; NdisMedium802_11 
+;*PhysicalMediaType 	= 0 ; NdisPhysicalMediumUnspecified 
+;*PhysicalMediaType	= 14 ; NdisPhysicalMedium802_3 
+
+[novell.ndi.NTAMD64]
+Characteristics 	= 0x81
+AddReg			= venet.reg
+CopyFiles       	= novell.CopyFiles
+*IfType         	= 6  ; IF_TYPE_ETHERNET_CSMACD 
+*MediaType      	= 0 
+*PhysicalMediaType	= 14 
+
+[novell.ndi.NTx86.Services]
+AddService = venet, 2, novell.Service
+
+[novell.ndi.NTAMD64.Services]
+AddService = venet, 2, novell.Service
+
+[novell.Service]
+DisplayName     = %Novell.Service.DispName%
+ServiceType     = 1             ;SERVICE_KERNEL_DRIVER
+StartType       = 3             ;SERVICE_DEMAND_START
+ErrorControl    = 1             ;SERVICE_ERROR_NORMAL
+ServiceBinary   = %12%\venet.sys
+;LoadOrderGroup  = NDIS
+
+[venet.reg]
+HKR, Ndi,                         Service,    0, "venet"
+
+HKR, Ndi\Interfaces,              UpperRange, 0, "ndis5"
+HKR, Ndi\Interfaces,              LowerRange, 0, "ethernet"
+
+HKR, Ndi\params\*ReceiveBuffers,  ParamDesc,  0, "%ReceiveBuffers%"
+HKR, Ndi\params\*ReceiveBuffers,  default,    0, "64"
+HKR, Ndi\params\*ReceiveBuffers,  min,        0, "1"
+HKR, Ndi\params\*ReceiveBuffers,  max,        0, "00000128"
+HKR, Ndi\params\*ReceiveBuffers,  step,       0, "1"
+HKR, Ndi\params\*ReceiveBuffers,  Base,       0, "10"
+HKR, Ndi\params\*ReceiveBuffers,  type,       0, "int"
+
+HKR, Ndi\params\*TransmitBuffers, ParamDesc,  0, "%TransmitBuffers%"
+HKR, Ndi\params\*TransmitBuffers, default,    0, "20"
+HKR, Ndi\params\*TransmitBuffers, min,        0, "1"
+HKR, Ndi\params\*TransmitBuffers, max,        0, "00000020"
+HKR, Ndi\params\*TransmitBuffers, step,       0, "1"
+HKR, Ndi\params\*TransmitBuffers, Base,       0, "10"
+HKR, Ndi\params\*TransmitBuffers, type,       0, "int"
+
+[novell.CopyFiles]
+venet.sys,,,2
+
+[SourceDisksNames]
+1 = %DiskDescription%,venet.sys,,
+
+[SourceDisksFiles]
+venet.sys = 1,,
+
+[DestinationDirs]
+novell.CopyFiles           = 12
+
+
+;-------------- WDF Coinstaller installation
+
+[DestinationDirs]
+CoInstaller_CopyFiles = 11
+
+[novell.ndi.NTx86.CoInstallers]
+AddReg=CoInstaller_AddReg
+CopyFiles=CoInstaller_CopyFiles
+
+[novell.ndi.NTAMD64.CoInstallers]
+AddReg=CoInstaller_AddReg
+CopyFiles=CoInstaller_CopyFiles
+
+[CoInstaller_CopyFiles]
+wdfcoinstaller$KMDFCOINSTALLERVERSION$.dll
+
+[SourceDisksFiles]
+wdfcoinstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+[CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "wdfcoinstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[novell.ndi.NTx86.Wdf]
+KmdfService = venet, novell_wdfsect
+
+[novell.ndi.NTAMD64.Wdf]
+KmdfService = venet, novell_wdfsect
+
+[novell_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+;---------------------------------------------------------------;
+
+
+[Strings]
+Novl                         = "Novell"
+Novell                       = "Novell Inc"
+Novl.Device_desc             = "AlacrityVM Virtual Ethernet Adapter"
+Novell.Service.DispName      = "AlacrityVM Virtual Ethernet (venet) driver"
+DiskDescription              = "Novell Sample Driver Disk 1"
+TransmitBuffers              = "Transmit Buffers"
+ReceiveBuffers               = "Receive Buffers"
+
