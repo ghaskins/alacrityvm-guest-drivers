@@ -14,6 +14,9 @@
 
 C:
 
+:: Delete old setupapi log.
+del \windows\inf\setupapi.dev.log
+
 :: First install vbus, creating the catalog as we go.
 mkdir c:\tmp
 del /q C:\tmp\*
@@ -34,5 +37,9 @@ cd \tmp
 inf2cat /driver:C:\tmp /os:7_X86
 signtool sign /v /s root /n vbus /t http://verisign.timestamp.com/scripts/timestamp.dll venet.cat
 devcon update  netnovl.inf VBUS\test_dev_10
+
+:: copy setup log...
+
+copy \windows\inf\setupapi.dev.log z:setup.log
 
 Z:
