@@ -34,8 +34,8 @@ struct vbus_pci {
 	WDFDEVICE		bus;
 	struct ioq		eventq;
 	struct vbus_pci_event	*ring;
-	struct vbus_pci_regs	*regs;    /* pio */
-	struct vbus_pci_signals	*signals; /* mmio */
+	struct vbus_pci_regs	*regs;    /* mmio */
+	struct vbus_pci_signals	*signals; /* pio */
 	ULONG			signals_length;
 	ULONG			regs_length;
 	int			enabled;
@@ -552,15 +552,6 @@ eventq_init(int qlen)
  * -------------------
  */
 
-static void
-vbus_pci_release(void)
-{
-	VbusFree(vbus_pci.eventq.head_desc);
-	VbusFree(vbus_pci.eventq.signal);
-	VbusFree(vbus_pci.ring);
-	memset(&vbus_pci, '\0', sizeof(vbus_pci));
-}
-
 static int
 vbus_pci_open(void)
 {
@@ -591,7 +582,7 @@ vbus_pci_eventq_register(void)
 }
 
 static NTSTATUS
-_ioq_init(size_t ringsize, struct ioq *ioq, struct ioq_ops *ops)
+eventq_ioq_init(size_t ringsize, struct ioq *ioq, struct ioq_ops *ops)
 {
 	struct shm_signal	*signal = NULL;
 	struct ioq_ring_head	*head = NULL;
@@ -621,7 +612,7 @@ _ioq_init(size_t ringsize, struct ioq *ioq, struct ioq_ops *ops)
 }
 
 static NTSTATUS
-VbusParseResource(WDFCMRESLIST rt, ULONG i)
+vbus_pci_parse_resource(WDFCMRESLIST rt, ULONG i)
 {
 	PCM_PARTIAL_RESOURCE_DESCRIPTOR	d;
 	ULONGLONG			len;
@@ -634,7 +625,6 @@ VbusParseResource(WDFCMRESLIST rt, ULONG i)
 		case CmResourceTypePort:
 			vbus_pci.signals = ULongToPtr(d->u.Port.Start.LowPart);
 			vbus_pci.signals_length = d->u.Port.Length;
-	vlog("port length = %d", vbus_pci.signals_length);
 			break;
 
 		case CmResourceTypeMemory:
@@ -642,7 +632,6 @@ VbusParseResource(WDFCMRESLIST rt, ULONG i)
 					d->u.Memory.Length,
 					MmNonCached);
 			vbus_pci.regs_length = d->u.Memory.Length;
-	vlog("memory length = %d", vbus_pci.regs_length);
 			break;
 
 		case CmResourceTypeInterrupt:
@@ -653,25 +642,29 @@ VbusParseResource(WDFCMRESLIST rt, ULONG i)
 	return STATUS_SUCCESS;
 }
 
-static void 
-VbusUnmapIoSpace(void)
-{
-	if (vbus_pci.signals) {
-	        MmUnmapIoSpace(vbus_pci.regs, vbus_pci.regs_length);
-		vbus_pci.signals = NULL;
-	}
 
+static void 
+vbus_pci_cleanup(void)
+{
+	/* Perform all cleanups for a shutdown or restart */
+
+	if (vbus_pci.regs) 
+	        MmUnmapIoSpace(vbus_pci.regs, vbus_pci.regs_length);
+	VbusFree(vbus_pci.eventq.head_desc);
+	VbusFree(vbus_pci.eventq.signal);
+	VbusFree(vbus_pci.ring);
+	memset(&vbus_pci, '\0', sizeof(vbus_pci));
 }
 
 static NTSTATUS
-VbusMapResources(WDFCMRESLIST rt)
+vbus_pci_map_resources(WDFCMRESLIST rt)
 {
 	NTSTATUS	rc = STATUS_DEVICE_CONFIGURATION_ERROR;
    	ULONG		i;
 	ULONG		cnt;
 
 	for (i = 0; i < WdfCmResourceListGetCount(rt); i++) {
-		rc = VbusParseResource(rt, i);
+		rc = vbus_pci_parse_resource(rt, i);
 		if (!NT_SUCCESS(rc))
 			break;
 	}
@@ -717,7 +710,6 @@ vlog("*** INTERUPPT ***");
 	return TRUE;
 }
 
-
 /*
  * Init the Vbus.
  */
@@ -725,7 +717,6 @@ NTSTATUS
 VbusPciPrepareHardware(WDFDEVICE dev, WDFCMRESLIST rt)
 {
 	NTSTATUS 		rc;
-	WDF_OBJECT_ATTRIBUTES	attr;
 
 	if (vbus_pci.enabled)
 		return STATUS_DEVICE_ALREADY_ATTACHED;
@@ -734,13 +725,12 @@ VbusPciPrepareHardware(WDFDEVICE dev, WDFCMRESLIST rt)
 	vbus_pci.bus = dev;
 
 	/* Create the spin used for bridgecalls */
-	WDF_OBJECT_ATTRIBUTES_INIT(&attr);
-	rc = WdfSpinLockCreate(&attr, &vbus_pci.lock);
+	rc = WdfSpinLockCreate(WDF_NO_OBJECT_ATTRIBUTES, &vbus_pci.lock);
 	if (!NT_SUCCESS(rc))
 		return rc;
 
 	/* Get and map our pci hw resources */
-	rc = VbusMapResources(rt);
+	rc = vbus_pci_map_resources(rt);
 	if (!NT_SUCCESS(rc))
 		goto out_fail;
 
@@ -755,13 +745,11 @@ VbusPciPrepareHardware(WDFDEVICE dev, WDFCMRESLIST rt)
 	/*
 	 * Allocate an IOQ to use for host-2-guest event notification
 	 */
-vlog("ioq_init");
 	eventq_ioq_ops.release = eventq_ioq_release;
-	rc = _ioq_init(QLEN, &vbus_pci.eventq, &eventq_ioq_ops);
+	rc = eventq_ioq_init(QLEN, &vbus_pci.eventq, &eventq_ioq_ops);
 	if (!NT_SUCCESS(rc))
 		goto out_fail;
 
-vlog("eventq_init");
 	rc = eventq_init(QLEN);
 	if (!NT_SUCCESS(rc))
 		goto out_fail;
@@ -769,7 +757,6 @@ vlog("eventq_init");
 	/*
 	 * Finally register our queue on the host to start receiving events
 	 */
-vlog("eventq_register");
 	rc = vbus_pci_eventq_register();
 	if (rc < 0) {
 		rc = STATUS_DEVICE_PROTOCOL_ERROR;
@@ -782,8 +769,7 @@ vlog("success");
 	return STATUS_SUCCESS;
 
 out_fail:
-	vbus_pci_release();
-	VbusUnmapIoSpace();
+	vbus_pci_cleanup();
 	return rc;
 }
 
@@ -808,8 +794,7 @@ VbusPciCreateResources(WDFDEVICE dev)
 NTSTATUS
 VbusPciReleaseHardware(void)
 {
-	vbus_pci_release();
-	VbusUnmapIoSpace();
+	vbus_pci_cleanup();
 	return STATUS_SUCCESS;
 }
 
