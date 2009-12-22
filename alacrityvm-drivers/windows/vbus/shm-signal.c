@@ -117,10 +117,8 @@ _ShmSignalWakeup(struct shm_signal *s)
 		irq->dirty = 0;
 		KeMemoryBarrier();
 			
-		/*
 		if (s->notifier)
-			s->notifier.signal(s->);
-			*/
+			s->notifier->signal(s->notifier);
 	}
 }
 

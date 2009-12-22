@@ -76,12 +76,14 @@ vbus_pci_bridgecall(unsigned long nr, void *data, unsigned long len)
 	params.len = len;
 	params.datap  = __pa(data);
 
+	/* Send over as array of 32bit words */
+
+	len = (sizeof(params) >> 2)  + (sizeof(params) % 4);
+
 	WdfSpinLockAcquire(vbus_pci.lock);
-
-	WRITE_PORT_BUFFER_UCHAR((PUCHAR)((PVOID) &vbus_pci.regs->bridgecall), 
-			((PUCHAR) ((PVOID) &params)), sizeof(params));
-	ret = READ_PORT_ULONG((PULONG) &vbus_pci.regs->bridgecall);
-
+	WRITE_REGISTER_BUFFER_ULONG((PUCHAR)((PVOID)&vbus_pci.regs->bridgecall),
+			((PULONG) ((PVOID) &params)), len);
+	ret = READ_REGISTER_ULONG((PULONG) &vbus_pci.regs->bridgecall);
 	WdfSpinLockRelease(vbus_pci.lock);
 
 	return ret;
@@ -658,6 +660,7 @@ vbus_parse_descriptor(WDFCMRESLIST rt, ULONG i)
 		case CmResourceTypePort:
 			vbus_pci.signals = ULongToPtr(d->u.Port.Start.LowPart);
 			vbus_pci.signals_length = d->u.Port.Length;
+	vlog("port length = %d", vbus_pci.signals_length);
 			break;
 
 		case CmResourceTypeMemory:
@@ -665,6 +668,7 @@ vbus_parse_descriptor(WDFCMRESLIST rt, ULONG i)
 					d->u.Memory.Length,
 					MmNonCached);
 			vbus_pci.regs_length = d->u.Memory.Length;
+	vlog("memory length = %d", vbus_pci.regs_length);
 			break;
 
 		case CmResourceTypeInterrupt:
@@ -764,10 +768,9 @@ VbusPciPrepareHardware(WDFDEVICE dev, WDFCMRESLIST rt)
 	if (!NT_SUCCESS(rc))
 		goto out_fail;
 
-	do_test_pdo();
+	//do_test_pdo();
 
 
-return STATUS_SUCCESS;
 	/* Negotiate and verify */
 	vlog("  negotiate start");
 	rc = vbus_pci_open();
@@ -777,6 +780,7 @@ return STATUS_SUCCESS;
 		goto out_fail;
 	}
 	vlog("  negotiate after!");
+return STATUS_SUCCESS;
 
 	/*
 	 * Allocate an IOQ to use for host-2-guest event notification
