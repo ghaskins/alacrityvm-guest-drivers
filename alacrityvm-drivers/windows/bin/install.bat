@@ -36,7 +36,7 @@ copy Z:\venet\objchk_win7_x86\i386\netnovl.inf \tmp
 cd \tmp
 inf2cat /driver:C:\tmp /os:7_X86
 signtool sign /v /s root /n vbus /t http://verisign.timestamp.com/scripts/timestamp.dll venet.cat
-devcon update  netnovl.inf VBUS\test_dev_10
+devcon update  netnovl.inf VBUS\virtual-ethernet
 
 :: copy setup log...
 

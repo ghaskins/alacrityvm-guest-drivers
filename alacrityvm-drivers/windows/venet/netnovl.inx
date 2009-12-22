@@ -25,12 +25,12 @@ ExcludeFromSelect = *
 [Novl.NTx86]
 ; DisplayName              Section         DeviceID
 ; -----------              -------         --------
-%Novl.Device_desc%       = novell.ndi,     VBUS\test_dev_10
+%Novl.Device_desc%       = novell.ndi,     VBUS\virtual-ethernet
 
 [Novl.NTamd64]
 ; DisplayName              Section         DeviceID
 ; -----------              -------         --------
-%Novl.Device_desc%       = novell.ndi,     VBUS\test_dev_10
+%Novl.Device_desc%       = novell.ndi,     VBUS\virtual-ethernet
 
 [novell.ndi.NTx86]
 Characteristics 	= 0x81
