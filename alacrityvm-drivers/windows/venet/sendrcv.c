@@ -157,3 +157,9 @@ VenetFreeQueuedSend(PADAPTER a, NDIS_STATUS status)
 	vlog("freequeuedsend");
 
 }
+
+VOID 
+VenetReceivePackets(PADAPTER a)
+{
+	UNREFERENCED_PARAMETER(a);
+}

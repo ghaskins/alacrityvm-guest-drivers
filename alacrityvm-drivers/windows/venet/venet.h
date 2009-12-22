@@ -103,6 +103,7 @@
 #define VENET_IS_READY(_M) 	(!((_M)->state & (VNET_IS_NOT_READY_MASK)))
 #define VENET_IS_PAUSED(_M) 	((_M)->state & (VNET_ADAPTER_PAUSED))
 #define VENET_NO_LINK(_M) 	((_M)->state & (VNET_ADAPTER_NO_LINK))
+#define VENET_IS_BUSY(_M) 	((_M)->nBusySend || (_M)->nBusyRecv)
 
 
 
@@ -114,6 +115,7 @@ typedef struct _ADAPTER {
 	LIST_ENTRY	list;
 	NDIS_HANDLE	adapterHandle;	
 	ULONG		state;	/* state flags */
+	LONG		refCount;
 
 	PDEVICE_OBJECT	fdo;
 	PDEVICE_OBJECT	pdo;
@@ -127,8 +129,13 @@ typedef struct _ADAPTER {
 	PDEVICE_OBJECT	control_object; /* Device for IOCTLs. */
 
 	/* Timers */
-	NDIS_HANDLE	ResetTimer;
+	NDIS_HANDLE	resetTimer;
+	NDIS_HANDLE	recvTimer;
+	LONG		resetCount;
+	LONG		recvCount;
 
+	/* Events */
+	NDIS_EVENT	removeEvent;
 
 	/* Various oid data */
 	UCHAR		permAddress[ETH_LENGTH_OF_ADDRESS];
@@ -172,6 +179,18 @@ typedef struct _ADAPTER_CONTEXT {
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(ADAPTER_CONTEXT, GetAdapterContext)
 
 
+
+#define VENET_ADAPTER_GET(_M)	NdisInterlockedIncrement(&(_M)->refCount)
+
+static __inline VOID VENET_ADAPTER_PUT(PADAPTER a)	
+{
+	NdisInterlockedDecrement(&a->refCount);
+	ASSERT(a->refCount >= 0);
+	if (!a->refCount) 
+		NdisSetEvent(&a->removeEvent);
+}
+
+
 /*
  * For logging to COM1.
  */
@@ -204,6 +223,8 @@ MINIPORT_CANCEL_OID_REQUEST		VenetCancelOidRequest;
 
 extern VOID VenetSetSyncFlag(PADAPTER a, int flag);
 extern VOID VenetFreeQueuedSend(PADAPTER a, NDIS_STATUS status);
+extern VOID VenetReceivePackets(PADAPTER a);
+extern VOID VenetFreeQueuedPackets(PADAPTER a);
 
 
 #endif /* _VENET_H_ */

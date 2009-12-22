@@ -26,7 +26,23 @@
 
 NDIS_HANDLE	 mp_handle;
 NDIS_HANDLE	 driver_context;
+static LIST_ENTRY       adapterList;
+static NDIS_SPIN_LOCK   adapterListLock;
 
+
+VOID
+VenetAttach(PADAPTER a)
+{
+	NdisInterlockedInsertTailList(&adapterList, &a->list, &adapterListLock);
+}
+
+VOID
+VenetDetach(PADAPTER a)
+{
+	NdisAcquireSpinLock(&adapterListLock);
+	RemoveEntryList(&a->list);
+	NdisReleaseSpinLock(&adapterListLock);
+}
 
 VOID
 VenetSetLinkState(PADAPTER a, BOOLEAN state)
@@ -74,6 +90,53 @@ VenetSetSyncFlag(PADAPTER a, int flag)
 	VENET_SET_FLAG(a, flag);
 	NdisReleaseSpinLock(&a->sendLock);
 	NdisReleaseSpinLock(&a->recvLock);
+}
+
+VOID
+VenetResetTimerDpc(PVOID s1, PVOID context, PVOID s2, PVOID s3)
+{
+	PADAPTER	a = (PADAPTER) context;
+	LARGE_INTEGER	interval;
+	BOOLEAN		done = TRUE;
+	NDIS_STATUS	rc = NDIS_STATUS_SOFT_ERRORS;
+	UNREFERENCED_PARAMETER(s1);
+	UNREFERENCED_PARAMETER(s2);
+	UNREFERENCED_PARAMETER(s3);
+
+	VENET_ADAPTER_GET(a);
+
+	if (VENET_IS_BUSY(a)) {
+		done = FALSE;
+		VenetFreeQueuedSend(a, NDIS_STATUS_RESET_IN_PROGRESS);
+	}
+
+	/* Not done, try again? */
+	if (!done && ++a->resetCount <= 20) {
+		interval.QuadPart = 500;
+		NdisSetTimerObject(a->resetTimer, interval, 0, NULL);
+		VENET_ADAPTER_PUT(a);
+		return;
+	}
+
+	if (done) {
+		VENET_CLEAR_FLAG(a, VNET_ADAPTER_RESET);
+		rc = NDIS_STATUS_SUCCESS;
+	}
+
+	NdisMResetComplete(a->adapterHandle, rc, FALSE);
+	VENET_ADAPTER_PUT(a);
+}
+
+VOID    
+VenetReceiveTimerDpc(PVOID s1, PVOID context, PVOID s2, PVOID s3)
+{               
+	PADAPTER	a = (PADAPTER) context;
+	UNREFERENCED_PARAMETER(s1);
+	UNREFERENCED_PARAMETER(s2);
+	UNREFERENCED_PARAMETER(s3);
+		        
+	if (!IsListEmpty(&a->recvToProcess)) 
+		VenetReceivePackets(a);
 }
 
 
@@ -213,6 +276,12 @@ VenetSetupTx(PADAPTER a)
 	return NDIS_STATUS_SUCCESS;
 }
 
+static VOID
+VenetFreeTx(PADAPTER a)
+{
+	UNREFERENCED_PARAMETER(a);
+}
+
 static NDIS_STATUS 
 VenetSetupRx(PADAPTER a)
 {
@@ -233,11 +302,27 @@ VenetSetupRx(PADAPTER a)
 	return rc;
 }
 
+static VOID
+VenetFreeRx(PADAPTER a)
+{
+	UNREFERENCED_PARAMETER(a);
+}
+
+static VOID 
+VenetQuiesce(PADAPTER a)
+{
+
+	/*  we are shutting down, deal with remaining packets. */
+	UNREFERENCED_PARAMETER(a);
+
+}
+
 static NDIS_STATUS
 VenetSetupAdapter(PADAPTER a)
 {
 
 	NDIS_STATUS			rc;
+	NDIS_TIMER_CHARACTERISTICS	timer;	       
 
 	NdisAllocateSpinLock(&a->lock);
 	NdisInitializeListHead(&a->list);
@@ -249,30 +334,27 @@ VenetSetupAdapter(PADAPTER a)
 	NdisAllocateSpinLock(&a->recvLock);
 	NdisAllocateSpinLock(&a->sendLock);
 
-	//NdisInitializeEvent(&a->RemoveEvent);
+	NdisInitializeEvent(&a->removeEvent);
 
 	/* Create Rest and receive timers. */
-#if 0
-	NDIS_TIMER_CHARACTERISTICS	timer;	       
 	NdisZeroMemory(&timer, sizeof(NDIS_TIMER_CHARACTERISTICS));
 	timer.Header.Type = NDIS_OBJECT_TYPE_TIMER_CHARACTERISTICS;
 	timer.Header.Revision = NDIS_TIMER_CHARACTERISTICS_REVISION_1;
 	timer.Header.Size = sizeof(NDIS_TIMER_CHARACTERISTICS);
 	timer.AllocationTag = VNET;
-	timer.TimerFunction = VenetResetCompleteTimerDpc;
+	timer.TimerFunction = VenetResetTimerDpc;
 	timer.FunctionContext = a;
 
-	rc = NdisAllocateTimerObject(a->AdapterHandle, &timer, &a->ResetTimer);
+	rc = NdisAllocateTimerObject(a->adapterHandle, &timer, &a->resetTimer);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto done;
 
 	timer.TimerFunction = VenetReceiveTimerDpc;
-	timer.FunctionContext = adapter;
-	rc = NdisAllocateTimerObject(a->AdapterHandle, &timer, &a->rcv_timer);
+	timer.FunctionContext = a;
+	rc = NdisAllocateTimerObject(a->adapterHandle, &timer, &a->recvTimer);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto done;
 
-#endif
 	rc = VenetSetupRx(a);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto done;
@@ -306,6 +388,7 @@ VenetInitialize(NDIS_HANDLE handle, NDIS_HANDLE driver_context,
 	/* Set default values */
 	a->lookAhead = NIC_MAX_LOOKAHEAD;
 	a->adapterHandle = handle;
+	VENET_SET_FLAG(a, VNET_DISCONNECTED);
 
 	/* Get my interface from Vbus... */
 	NdisMGetDeviceProperty(handle, &a->pdo, &a->fdo, &a->next, NULL, NULL);
@@ -350,13 +433,16 @@ vlog("get set adapter");
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto err;
 
+	VenetAttach(a);
+	VENET_CLEAR_FLAG(a, VNET_DISCONNECTED);
+
 	vlog("VenetInitialize return SUCCESS");
 	return NDIS_STATUS_SUCCESS;
 err:
 
 	vlog("VenetInitialize err return!!");
-	if (a)
-		NdisFreeMemory(a, sizeof(ADAPTER), 0);
+
+	VenetHalt(a, 0);
 
 	return rc;
 }
@@ -370,14 +456,32 @@ VenetHalt(NDIS_HANDLE handle, NDIS_HALT_ACTION action)
 
 	vlog("halt called");
 
-	/* Disable 'interrupts' */
+	VENET_SET_SYNC_FLAG(a, VNET_ADAPTER_HALT_IN_PROGRESS);
 
-	/* Close down the vbus vif's */
+	VenetShutdown(a, NdisShutdownPowerOff);
 
-	/* Cancel any timers */
+	VenetDetach(a);
+	VenetFreeQueuedSend(a, NDIS_STATUS_FAILURE);
 
-	/* Free Adapter context */
+	/* Now dec and wait for the remove event */
+	vlog("halt refcount = %d", a->refCount);
+	VENET_ADAPTER_PUT(a);
+	NdisWaitEvent(&a->removeEvent, 5000);
+
+	vlog("halt spin and timers ");
+	/* Free resources */
+	NdisFreeSpinLock(&a->Lock);
+	NdisFreeTimerObject(a->resetTimer);
+	NdisFreeTimerObject(a->recvTimer);
+
+	VenetFreeRx(a);
+	VenetFreeTx(a);
+
+	vlog("halt send/recv locks");
+	NdisFreeSpinLock(&a->sendLock);
+	NdisFreeSpinLock(&a->recvLock);
 	NdisFreeMemory(a, sizeof(ADAPTER), 0);
+	vlog("halt done");
 }
 
 VOID 
@@ -402,6 +506,8 @@ VenetPause(NDIS_HANDLE handle, PNDIS_MINIPORT_PAUSE_PARAMETERS parms)
 	 * Set the pausing flag.
 	 */
 	VENET_SET_SYNC_FLAG(a, VNET_ADAPTER_PAUSED);
+
+	VenetQuiesce(a);
 
 	return NDIS_STATUS_SUCCESS;
 }
@@ -456,7 +562,6 @@ VenetReset(NDIS_HANDLE handle, PBOOLEAN addr_reset)
 	/* Done with reset */
 	VENET_CLEAR_FLAG(a, VNET_ADAPTER_RESET);
 
-
 	return NDIS_STATUS_SUCCESS;
 }
 
@@ -473,11 +578,20 @@ VenetDevicePnPEvent(NDIS_HANDLE handle, PNET_DEVICE_PNP_EVENT event)
 }
 
 VOID 
-VenetShutdown(NDIS_HANDLE adapter, NDIS_SHUTDOWN_ACTION action)
+VenetShutdown(NDIS_HANDLE handle, NDIS_SHUTDOWN_ACTION action)
 {
-	UNREFERENCED_PARAMETER(adapter);
+	PADAPTER	a = (PADAPTER) handle;
 	UNREFERENCED_PARAMETER(action);
 	vlog("shutdown called");
+
+	/* Set state */
+	VENET_SET_SYNC_FLAG(a, VNET_ADAPTER_SHUTDOWN);
+
+	/* Quiesce */
+	VenetQuiesce(a);
+
+	/*XXX shutdown the VBUS handle */
+
 }
 
 VOID 
@@ -514,6 +628,10 @@ DriverEntry(PVOID obj,PVOID path)
 		vlog("DriverEntry WdfDriverCreate: %d", nrc);
 		return NDIS_STATUS_FAILURE;
 	}
+
+	/* For multiple instances */
+	NdisInitializeListHead(&adapterList);
+	NdisAllocateSpinLock(&adapterListLock);
 
 
 	NdisZeroMemory(&c, sizeof(c));
