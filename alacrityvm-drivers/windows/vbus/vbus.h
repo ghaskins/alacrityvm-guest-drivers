@@ -34,6 +34,8 @@
 #include "vbus_pci.h"
 #include "ioq.h"
 
+/* Memory allocation stuff */
+#define VTAG	'vv'
 
 /*
  * Context for a PDO.  Currently a placeholder
@@ -100,6 +102,8 @@ extern NTSTATUS VbusInterfaceOpen(VOID);
 extern NTSTATUS VbusInterfaceClose(VOID);
 extern NTSTATUS VbusInterfaceRead(VOID);
 extern NTSTATUS VbusInterfaceWrite(VOID);
+extern PVOID VbusAlloc(LONG len);
+extern VOID VbusFree(PVOID p);
 
 /* Do not add anything below this line */
 #endif

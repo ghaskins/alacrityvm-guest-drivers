@@ -113,6 +113,24 @@ VbusCleanup(WDFDRIVER	d)
 	vlog("VbusCleanup()\n\n");
 }
 
+PVOID 
+VbusAlloc(LONG	len)
+{
+	PVOID	p;
+
+	p = ExAllocatePoolWithTag(NonPagedPool, len, VTAG);
+	if (p) 
+		memset(p, '\0', len);
+	return p;
+}
+
+VOID
+VbusFree(PVOID p) 
+{
+	if (p) 
+		ExFreePoolWithTag(p, VTAG);
+}
+
 NTSTATUS
 DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)
 {

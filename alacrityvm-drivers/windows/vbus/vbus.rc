@@ -7,5 +7,9 @@
 #define VER_FILEDESCRIPTION_STR		"Dynamic VBus Enumerator"
 #define VER_INTERNALNAME_STR        	"vbus.sys"
 #define VER_ORIGINALFILENAME_STR    	"vbus.sys"
+#ifdef VER_PRODUCTVERSION
+#undef VER_PRODUCTVERSION
+#define VER_PRODUCTVERSION 		1,00,00,001
+#endif
 
 #include "common.ver"
