@@ -37,13 +37,7 @@ VbusReleaseHardware(WDFDEVICE dev,WDFCMRESLIST rlist)
 	return VbusPciReleaseHardware();
 }
 
-static VOID
-VbusDeviceCleanup(WDFDEVICE dev)
-{
-	vlog("VbusDeviceCleanup");
-}
-
-NTSTATUS
+static NTSTATUS
 VbusAdd(WDFDRIVER Driver, PWDFDEVICE_INIT DeviceInit)
 {
 	WDF_CHILD_LIST_CONFIG	c;
@@ -76,14 +70,8 @@ VbusAdd(WDFDRIVER Driver, PWDFDEVICE_INIT DeviceInit)
 
 	WdfDeviceInitSetPnpPowerEventCallbacks(DeviceInit, &pnp);
 
-	/* 
-	 * Set a context area for our use.  This is allocated and 
-	 * zero'ed by the framework. 
-	 */
-	WDF_OBJECT_ATTRIBUTES_INIT(&attr);
-	attr.EvtCleanupCallback = VbusDeviceCleanup;
-
 	/* Create the device */
+	WDF_OBJECT_ATTRIBUTES_INIT(&attr);
 	rc = WdfDeviceCreate(&DeviceInit, &attr, &dev);
 	if (!NT_SUCCESS(rc)) 
 		return rc;
@@ -108,9 +96,9 @@ VbusAdd(WDFDRIVER Driver, PWDFDEVICE_INIT DeviceInit)
 }
 
 static VOID
-VbusCleanup(WDFDRIVER	d)
+VbusUnload(WDFDRIVER d)
 {
-	vlog("VbusCleanup()\n\n");
+	vlog("VbusUnload()\n\n");
 }
 
 PVOID 
@@ -142,8 +130,8 @@ DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)
 	vlog("DriverEntry start");
 
 	WDF_OBJECT_ATTRIBUTES_INIT(&attr);
-	attr.EvtCleanupCallback = VbusCleanup;
 	WDF_DRIVER_CONFIG_INIT(&c, VbusAdd);
+	c.EvtDriverUnload = VbusUnload;
 	rc = WdfDriverCreate(DriverObject, RegistryPath, &attr, &c, &driver);
 
 	vlog("DriverEntry end, rc = %d", rc);
