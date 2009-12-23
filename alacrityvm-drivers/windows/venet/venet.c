@@ -366,12 +366,33 @@ done:
 }
 
 NDIS_STATUS 
+VenetGetInterface(NDIS_HANDLE handle, PADAPTER a)
+{
+	WDF_OBJECT_ATTRIBUTES	attr;
+	NDIS_STATUS		rc = NDIS_STATUS_RESOURCES;
+	NTSTATUS		nrc;
+
+	/* Get my interface from Vbus... */
+	NdisMGetDeviceProperty(handle, &a->pdo, &a->fdo, &a->next, NULL, NULL);
+	WDF_OBJECT_ATTRIBUTES_INIT(&attr);
+	nrc = WdfDeviceMiniportCreate(WdfGetDriver(), &attr, a->fdo, 
+			a->next, a->pdo, &a->wdf_device);
+	if (NT_SUCCESS(nrc)) {
+		rc = WdfIoTargetQueryForInterface(
+				WdfDeviceGetIoTarget(a->wdf_device), 
+				&VBUS_INTERFACE_GUID, (PINTERFACE) &a->vif, 
+				VBUS_IF_SIZE, VBUS_IF_VERSION, NULL);
+	}
+
+	return rc;
+}
+
+NDIS_STATUS 
 VenetInitialize(NDIS_HANDLE handle, NDIS_HANDLE driver_context,
 		PNDIS_MINIPORT_INIT_PARAMETERS params)
 {
 	NDIS_STATUS				rc = NDIS_STATUS_RESOURCES;
 	NTSTATUS				nrc;
-	WDF_OBJECT_ATTRIBUTES			wdf_attr;
 	PADAPTER				a = NULL;
 
 	UNREFERENCED_PARAMETER(driver_context);
@@ -390,45 +411,26 @@ VenetInitialize(NDIS_HANDLE handle, NDIS_HANDLE driver_context,
 	a->adapterHandle = handle;
 	VENET_SET_FLAG(a, VNET_DISCONNECTED);
 
-	/* Get my interface from Vbus... */
-	NdisMGetDeviceProperty(handle, &a->pdo, &a->fdo, &a->next, NULL, NULL);
-	WDF_OBJECT_ATTRIBUTES_INIT(&wdf_attr);
-	nrc = WdfDeviceMiniportCreate(WdfGetDriver(), &wdf_attr, a->fdo, 
-			a->next, a->pdo, &a->wdf_device);
-	if (!NT_SUCCESS(nrc))
-		 goto err;
-
-vlog("query");
-	rc = WdfIoTargetQueryForInterface(WdfDeviceGetIoTarget(a->wdf_device), 
-			&VBUS_INTERFACE_GUID, (PINTERFACE) &a->vif, 
-			VBUS_IF_SIZE, VBUS_IF_VERSION, NULL);
+	rc = VenetGetInterface(handle, a);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto err;
 
-vlog("get mac");
-	/* 
-	 * General initialization of the adapter.
-	 */
 	rc = VenetGetMacAddress(a);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto err;
 
-vlog("get registry");
 	rc = VenetRegistryParams(a);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto err;
 
-vlog("get reg attr");
 	rc = VenetSetRegistrationAttributes(handle, a);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto err;
 
-vlog("get reg general");
 	rc = VenetSetGeneralAttributes(handle, a);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto err;
 
-vlog("get set adapter");
 	rc = VenetSetupAdapter(a);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto err;
