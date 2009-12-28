@@ -136,7 +136,7 @@ to_signal(struct shm_signal *signal)
 }
 
 static void
-_signal_init(struct signal *signal,
+_signal_init(struct shm_signal *signal,
 		struct shm_signal_desc *desc, struct shm_signal_ops *ops)
 {
 	desc->magic = SHM_SIGNAL_MAGIC;
@@ -258,6 +258,37 @@ event_devadd(struct vbus_pci_add_event *event)
 static void
 event_devdrop(struct vbus_pci_handle_event *event)
 {
+	WDFCHILDLIST		list;
+	WDF_CHILD_LIST_ITERATOR	it;
+	NTSTATUS		rc;
+	WDFDEVICE		dev;
+	PPDO_DEVICE_DATA	pd;
+	PDO_ID_DESC		d;
+
+	/* 
+	 * Search the child list for a child with this handle. 
+	 */
+	list = WdfFdoGetDefaultChildList(vbus_pci.bus);
+	WDF_CHILD_LIST_ITERATOR_INIT(&it, WdfRetrievePresentChildren);
+
+	WdfChildListBeginIteration(list, &it);
+	for(;;) {
+		rc = WdfChildListRetrieveNextDevice(list, &it, &dev, NULL);
+		if (!NT_SUCCESS(rc))
+			break;
+		pd = PdoGetData(dev);
+		if (pd->handle == event->handle) 
+			break;
+	}
+	WdfChildListEndIteration(list, &it);
+
+	if (NT_SUCCESS(rc)) {
+		WDF_CHILD_IDENTIFICATION_DESCRIPTION_HEADER_INIT(&d.header, 
+				sizeof(d));
+		d.id = pd->id;
+		memcpy(d.type, pd->type, VBUS_MAX_DEVTYPE_LEN);
+		WdfChildListUpdateChildDescriptionAsMissing(list, &d.header);
+	}
 }
 
 static void
@@ -265,6 +296,7 @@ event_shmsignal(struct vbus_pci_handle_event *event)
 {
 	struct _signal *s = (struct _signal *)(unsigned long)event->handle;
 
+	_ShmSignalWakeup(&s->signal);
 }
 
 static void
@@ -272,6 +304,7 @@ event_shmclose(struct vbus_pci_handle_event *event)
 {
 	struct _signal *s= (struct _signal *)(unsigned long)event->handle;
 
+	_signal_put(s);
 }
 
 /*
