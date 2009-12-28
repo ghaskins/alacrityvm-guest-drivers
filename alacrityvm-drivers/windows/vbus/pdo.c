@@ -32,7 +32,6 @@ VbusIdDup( WDFCHILDLIST DeviceList,
 {
 	PPDO_ID_DESC 	src;
 	PPDO_ID_DESC 	dst;
-	NTSTATUS 	rc;
 
 	src = CONTAINING_RECORD(sid, PDO_ID_DESC, header); 
 	dst = CONTAINING_RECORD(did, PDO_ID_DESC, header);
@@ -50,14 +49,12 @@ VbusIdCmp(WDFCHILDLIST DeviceList,
 {
 	PPDO_ID_DESC 	lhs;
 	PPDO_ID_DESC 	rhs;
-	BOOLEAN		rc;
+	BOOLEAN		rc = FALSE;
 
 	lhs = CONTAINING_RECORD(l, PDO_ID_DESC, header);
 	rhs = CONTAINING_RECORD(r, PDO_ID_DESC, header);
 
-	rc = FALSE;
-	if (lhs->id == rhs->id && 
-		!memcmp(lhs->type, rhs->type, VBUS_MAX_DEVTYPE_LEN))
+	if (lhs->id == rhs->id)
 		rc = TRUE;
 
 	return rc;

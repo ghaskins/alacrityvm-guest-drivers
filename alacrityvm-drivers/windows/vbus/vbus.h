@@ -58,7 +58,7 @@ typedef struct _PDO_ID_DESC
 {
 	WDF_CHILD_IDENTIFICATION_DESCRIPTION_HEADER header; 
 	UINT64		id;
-	char		type[VBUS_MAX_DEVTYPE_LEN];
+	char            type[VBUS_MAX_DEVTYPE_LEN];
 } PDO_ID_DESC, *PPDO_ID_DESC;
 
 /*

@@ -237,16 +237,11 @@ event_devadd(struct vbus_pci_add_event *event)
 	WDFCHILDLIST	list;
 	PDO_ID_DESC	d;
 	NTSTATUS	rc;
-	char		*src, *dst;
 
 	list = WdfFdoGetDefaultChildList(vbus_pci.bus);
 
 	WDF_CHILD_IDENTIFICATION_DESCRIPTION_HEADER_INIT(&d.header, sizeof(d));
-	memset(d.type, '\0', VBUS_MAX_DEVTYPE_LEN);
-	src = event->type;
-	dst = d.type;
-	while(*src)
-		*dst++ = *src++;
+	memcpy(d.type, event->type, VBUS_MAX_DEVTYPE_LEN);
 	d.id = event->id;
 
 	rc = WdfChildListAddOrUpdateChildDescriptionAsPresent(list, 
@@ -286,7 +281,6 @@ event_devdrop(struct vbus_pci_handle_event *event)
 		WDF_CHILD_IDENTIFICATION_DESCRIPTION_HEADER_INIT(&d.header, 
 				sizeof(d));
 		d.id = pd->id;
-		memcpy(d.type, pd->type, VBUS_MAX_DEVTYPE_LEN);
 		WdfChildListUpdateChildDescriptionAsMissing(list, &d.header);
 	}
 }
