@@ -64,6 +64,11 @@ ShmSignalEoi(struct shm_signal *s, int flags)
 	_ShmSignalWakeup(s);
 }
 
+void ShmGet(struct shm_signal *s)
+{
+	InterlockedIncrement(&s->ref_count);
+}
+
 /*
  * signaling protocol:
  *
@@ -112,7 +117,7 @@ _ShmSignalWakeup(struct shm_signal *s)
 {
 	struct shm_signal_irq *irq = &s->desc->irq[s->locale];
 	int dirty;
-	
+
 	if (irq->enabled && (irq->dirty || irq->pending)) {
 		irq->dirty = 0;
 		KeMemoryBarrier();

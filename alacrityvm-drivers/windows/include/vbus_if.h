@@ -30,10 +30,10 @@ DEFINE_GUID(VBUS_INTERFACE_GUID,
 #define _VBUS_IF_H_
 
 typedef NTSTATUS (*vbus_if_querymac)(PVOID buffer);
+typedef NTSTATUS (*vbus_if_open)(PDEVICE_OBJECT pdo);
 typedef NTSTATUS (*vbus_if_read)(VOID);
 typedef NTSTATUS (*vbus_if_write)(VOID);
-typedef NTSTATUS (*vbus_if_open)(VOID);
-typedef NTSTATUS (*vbus_if_close)(VOID);
+typedef NTSTATUS (*vbus_if_close)(PDEVICE_OBJECT pdo);
 
 #define VBUS_IF_VERSION		1
 #define VBUS_IF_SIZE		(sizeof(VBUS_IF))

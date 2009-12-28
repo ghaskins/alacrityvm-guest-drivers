@@ -71,6 +71,7 @@ struct shm_signal {
   struct shm_signal_ops      *ops;
   struct shm_signal_desc     *desc;
   struct shm_signal_notifier *notifier;
+  LONG			     ref_count;
 };
 
  /*

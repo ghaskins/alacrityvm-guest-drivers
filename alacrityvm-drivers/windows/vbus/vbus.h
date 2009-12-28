@@ -38,12 +38,15 @@
 #define VTAG	'vv'
 
 /*
- * Context for a PDO.  Currently a placeholder
+ * Context for a PDO.  
  */
 typedef struct _PDO_DEVICE_DATA
 {
+	LIST_ENTRY	shms;
+	UINT64		handle;
 	UINT64 		id;
 	char		type[VBUS_MAX_DEVTYPE_LEN];
+	WDFINTERRUPT	interrupt;
 
 } PDO_DEVICE_DATA, *PPDO_DEVICE_DATA;
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(PDO_DEVICE_DATA, PdoGetData)
@@ -57,6 +60,17 @@ typedef struct _PDO_ID_DESC
 	UINT64		id;
 	char		type[VBUS_MAX_DEVTYPE_LEN];
 } PDO_ID_DESC, *PPDO_ID_DESC;
+
+/*
+ * Context for an Interrupt.  All we need is a handle to the 
+ * _signal struct.
+ */
+typedef struct _INTR_DATA 
+{
+	PVOID		sig;
+} INT_DATA, *PINT_DATA;
+WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(INT_DATA, IntGetData)
+
 
 /*
  * For logging to COM1.
@@ -87,19 +101,18 @@ EVT_WDF_DEVICE_RELEASE_HARDWARE 			VbusReleaseHardware;
 EVT_WDF_DEVICE_PREPARE_HARDWARE 			VbusPrepareHardware;
 EVT_WDF_DEVICE_D0_ENTRY 				VbusPciD0Entry;
 EVT_WDF_DEVICE_D0_EXIT 					VbusPciD0Exit;
-EVT_WDF_INTERRUPT_ISR 					VbusIntrIsr;
-EVT_WDF_INTERRUPT_DPC 					VbusIntrDPC;
-EVT_WDF_INTERRUPT_ENABLE 				VbusIntrEnable;
-EVT_WDF_INTERRUPT_DISABLE 				VbusIntrDisable;
 
 
 extern NTSTATUS VbusPciPrepareHardware(WDFDEVICE dev, WDFCMRESLIST rt);
 extern NTSTATUS VbusPciReleaseHardware(void);
 extern NTSTATUS VbusPciCreateResources(WDFDEVICE dev);
 
+extern NTSTATUS VbusProxyOpen(PDEVICE_OBJECT pdo);
+extern NTSTATUS VbusProxyClose(PDEVICE_OBJECT pdo);
+
 extern NTSTATUS VbusInterfaceQueryMac(PUCHAR buffer);
-extern NTSTATUS VbusInterfaceOpen(VOID);
-extern NTSTATUS VbusInterfaceClose(VOID);
+extern NTSTATUS VbusInterfaceOpen(PDEVICE_OBJECT pdo);
+extern NTSTATUS VbusInterfaceClose(PDEVICE_OBJECT pdo);
 extern NTSTATUS VbusInterfaceRead(VOID);
 extern NTSTATUS VbusInterfaceWrite(VOID);
 extern PVOID VbusAlloc(LONG len);

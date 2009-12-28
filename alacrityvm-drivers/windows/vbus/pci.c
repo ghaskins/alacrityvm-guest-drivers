@@ -26,7 +26,6 @@
 #include "vbus_pci.h"
 #include "ioq.h"
 #include "shm-signal.h"
-#include "vbus_driver.h"
 
 struct vbus_pci {
 	WDFSPINLOCK		lock;
@@ -43,13 +42,28 @@ struct vbus_pci {
 
 static struct vbus_pci vbus_pci;
 
-struct vbus_pci_device {
-	char				type[VBUS_MAX_DEVTYPE_LEN];
-	UINT64				handle;
-	LIST_ENTRY			shms;
-	struct vbus_device_proxy 	vdev;
+struct _signal {
+	LIST_ENTRY		list;
+	struct shm_signal	signal;
+	UINT32			handle;
+	LONG			refCount;
+	PPDO_DEVICE_DATA	pd;
 };
 
+/* Persistent storage for the signal operations. */
+static struct shm_signal_ops _signal_ops;
+static struct shm_signal_ops eventq_signal_ops;
+
+/* ISR protos */
+EVT_WDF_INTERRUPT_DPC		_signal_dpc;
+EVT_WDF_INTERRUPT_ISR		_signal_isr;
+EVT_WDF_INTERRUPT_ENABLE	_signal_enable;
+EVT_WDF_INTERRUPT_DISABLE	_signal_disable;
+
+EVT_WDF_INTERRUPT_DPC		eventq_intr_dpc;
+EVT_WDF_INTERRUPT_ISR		eventq_intr_isr;
+EVT_WDF_INTERRUPT_ENABLE	eventq_intr_enable;
+EVT_WDF_INTERRUPT_DISABLE	eventq_intr_disable;
 
 /*
  * -------------------
@@ -80,7 +94,7 @@ vbus_pci_bridgecall(unsigned long nr, void *data, unsigned long len)
 	len = (sizeof(params) >> 2)  + (sizeof(params) % 4);
 
 	WdfSpinLockAcquire(vbus_pci.lock);
-	WRITE_REGISTER_BUFFER_ULONG((PUCHAR)((PVOID)&vbus_pci.regs->bridgecall),
+	WRITE_REGISTER_BUFFER_ULONG((PULONG)((PVOID)&vbus_pci.regs->bridgecall),
 			((PULONG) ((PVOID) &params)), len);
 	ret = READ_REGISTER_ULONG((PULONG) &vbus_pci.regs->bridgecall);
 	WdfSpinLockRelease(vbus_pci.lock);
@@ -107,21 +121,6 @@ vbus_pci_buscall(unsigned long nr, void *data, unsigned long len)
 	return ret;
 }
 
-static struct vbus_pci_device *
-to_dev(struct vbus_device_proxy *vdev)
-{
-	return CONTAINING_RECORD(vdev, struct vbus_pci_device, vdev);
-}
-
-static void
-_signal_init(struct shm_signal *signal, struct shm_signal_desc *desc,
-	     struct shm_signal_ops *ops)
-{
-	desc->magic = SHM_SIGNAL_MAGIC;
-	desc->ver   = SHM_SIGNAL_VER;
-
-	ShmSignalInit(signal, shm_locality_north, ops, desc);
-}
 
 /*
  * -------------------
@@ -129,13 +128,6 @@ _signal_init(struct shm_signal *signal, struct shm_signal_desc *desc,
  * -------------------
  */
 
-struct _signal {
-	char	       name[64];
-	struct vbus_pci   *pcivbus;
-	struct shm_signal  signal;
-	UINT32	     handle;
-	LIST_ENTRY	 list;
-};
 
 static struct _signal *
 to_signal(struct shm_signal *signal)
@@ -143,12 +135,33 @@ to_signal(struct shm_signal *signal)
        return CONTAINING_RECORD(signal, struct _signal, signal);
 }
 
+static void
+_signal_init(struct signal *signal,
+		struct shm_signal_desc *desc, struct shm_signal_ops *ops)
+{
+	desc->magic = SHM_SIGNAL_MAGIC;
+	desc->ver   = SHM_SIGNAL_VER;
+
+	ShmSignalInit(signal, shm_locality_north, ops, desc);
+}
+
+static void _signal_get(struct _signal *s)
+{
+	InterlockedIncrement(&s->refCount);
+}
+
+static void _signal_put(struct _signal *s)
+{
+	if (!InterlockedDecrement(&s->refCount)) 
+		VbusFree(s);
+}
+
 static int
 _signal_inject(struct shm_signal *signal)
 {
 	struct _signal *_signal = to_signal(signal);
 
-	WRITE_REGISTER_ULONG(&vbus_pci.signals->shmsignal, _signal->handle);
+	WRITE_PORT_ULONG(&vbus_pci.signals->shmsignal, _signal->handle);
 
 	return 0;
 }
@@ -158,181 +171,59 @@ _signal_release(struct shm_signal *signal)
 {
 	struct _signal *_signal = to_signal(signal);
 
-	VbusFree(_signal);
+	_signal_put(_signal);
 }
 
-static struct shm_signal_ops _signal_ops;
-
-/*
- * -------------------
- * vbus_device_proxy routines
- * -------------------
- */
-
 static NTSTATUS
-vbus_pci_device_open(struct vbus_device_proxy *vdev, int version, int flags)
+_signal_enable(WDFINTERRUPT in, WDFDEVICE dev)
 {
-	struct vbus_pci_device *dev = to_dev(vdev);
-	struct vbus_pci_deviceopen params;
-	int ret;
+	PINT_DATA	id = IntGetData(in);
+	struct _signal	*_signal = (struct _signal *) id->sig;
 
-	if (dev->handle)
-		return STATUS_NO_SUCH_DEVICE;
-
-	params.devid   = (UINT32) vdev->id;
-	params.version = version;
-
-	ret = vbus_pci_buscall(VBUS_PCI_HC_DEVOPEN,
-				 &params, sizeof(params));
-	if (ret < 0)
-		return ret;
-
-	dev->handle = params.handle;
-
+	ShmSignalEnable(&_signal->signal, 0);
 	return STATUS_SUCCESS;
 }
 
-static int
-vbus_pci_device_close(struct vbus_device_proxy *vdev, int flags)
-{
-	struct vbus_pci_device *dev = to_dev(vdev);
-	int ret;
-
-	if (!dev->handle)
-		return STATUS_NO_SUCH_DEVICE;
-
-	WdfSpinLockAcquire(vbus_pci.lock);
-
-	while (!IsListEmpty(&dev->shms)) {
-		struct _signal *_signal;
-
-		_signal = CONTAINING_RECORD(&dev->shms, struct _signal, list);
-		RemoveHeadList(&dev->shms);
-		VbusFree(_signal);
-	}
-
-	WdfSpinLockRelease(vbus_pci.lock);
-
-	/*
-	 * The DEVICECLOSE will implicitly close all of the shm on the
-	 * host-side, so there is no need to do an explicit per-shm
-	 * hypercall
-	 */
-	ret = vbus_pci_buscall(VBUS_PCI_HC_DEVCLOSE,
-				 &dev->handle, sizeof(dev->handle));
-	dev->handle = 0;
-
-	return 0;
-}
-
-
 static NTSTATUS
-vbus_pci_device_shm(struct vbus_device_proxy *vdev, const char *name,
-		    int id, int prio, void *ptr, size_t len,
-		    struct shm_signal_desc *sdesc, struct shm_signal **signal,
-		    int flags)
+_signal_disable(WDFINTERRUPT in, WDFDEVICE dev)
 {
-	struct vbus_pci_device *dev = to_dev(vdev);
-	struct _signal *_signal = NULL;
-	struct vbus_pci_deviceshm params;
-	char			*label;
-	PHYSICAL_ADDRESS pa;
-	int ret;
+	PINT_DATA	id = IntGetData(in);
+	struct _signal	*_signal = (struct _signal *) id->sig;
 
-	if (!dev->handle)
-		return STATUS_NO_SUCH_DEVICE;
-
-	params.devh   = dev->handle;
-	params.id     = id;
-	params.flags  = flags;
-	params.datap  = __pa(ptr);
-	params.len    = len;
-
-	if (signal) {
-		/*
-		 * The signal descriptor must be embedded within the
-		 * provided ptr
-		 */
-		if (!sdesc
-		    || (len < sizeof(*sdesc))
-		    || (UINT64)sdesc < (UINT64)ptr
-		    || (UINT64)sdesc > ((UINT64)ptr + len - sizeof(*sdesc)))
-			return STATUS_NO_SUCH_DEVICE;
-
-		_signal = VbusAlloc(sizeof(*_signal));
-		if (!_signal)
-			return STATUS_NO_MEMORY;
-
-		_signal_ops.inject  = _signal_inject,
-		_signal_ops.release = _signal_release,
-		_signal_init(&_signal->signal, sdesc, &_signal_ops);
-
-
-		params.signal.offset = (UINT64)(unsigned long)sdesc -
-					(UINT64)(unsigned long)ptr;
-		params.signal.prio   = prio;
-		params.signal.cookie = (UINT64)(unsigned long)_signal;
-
-	} else
-		params.signal.offset = -1; /* yes, this is a UINT32, but its ok */
-
-	ret = vbus_pci_buscall(VBUS_PCI_HC_DEVSHM, &params, sizeof(params));
-	if (ret < 0)
-		goto fail;
-
-	if (signal) {
-
-		if (!name)
-			RtlStringCchPrintfA(_signal->name, 
-				sizeof(_signal->name), "dev%lld-id%d",
-				vdev->id, id);
-		else
-			RtlStringCchPrintfA(_signal->name, 
-				sizeof(_signal->name), "%s", name);
-
-		WdfSpinLockAcquire(vbus_pci.lock);
-
-		InsertTailList(&dev->shms, &_signal->list);
-
-		WdfSpinLockRelease(vbus_pci.lock);
-
-		*signal = &_signal->signal;
-	}
-
-	return 0;
-
-fail:
-	return ret;
+	ShmSignalDisable(&_signal->signal, 0);
+	return STATUS_SUCCESS;
 }
 
-static int
-vbus_pci_device_call(struct vbus_device_proxy *vdev, UINT32 func, void *data,
-		     size_t len, int flags)
+
+
+static VOID
+_signal_dpc(WDFINTERRUPT in, WDFOBJECT obj) 
 {
-	struct vbus_pci_device *dev = to_dev(vdev);
-	struct vbus_pci_devicecall params;
+	PINT_DATA	id = IntGetData(in);
+	struct _signal	*_signal = (struct _signal *) id->sig;
 
-	params.devh  = dev->handle;
-	params.func  = func;
-	params.datap = __pa(data);
-	params.len   = len;
-	params.flags = flags;
-
-	if (!dev->handle)
-		return STATUS_NO_SUCH_DEVICE;
-
-	return vbus_pci_buscall(VBUS_PCI_HC_DEVCALL, &params, sizeof(params));
+	_ShmSignalWakeup(&_signal->signal);
 }
 
-static void
-vbus_pci_device_release(struct vbus_device_proxy *vdev)
+
+static BOOLEAN 
+_signal_isr(WDFINTERRUPT in, ULONG msg_id)
 {
-	struct vbus_pci_device *_dev = to_dev(vdev);
+	PINT_DATA	id = IntGetData(in);
+	struct _signal	*_signal = (struct _signal *) id->sig;
 
-	vbus_pci_device_close(vdev, 0);
+	/* If we are currently disabled, discard this interrupt. */ 
+	if (!ShmSignalTestEnabled(&_signal->signal))
+		return FALSE;
 
-	VbusFree(_dev);
+	/* disable, re-enabled in the DPC... */
+	ShmSignalDisable(&_signal->signal, 0);
+
+	WdfInterruptQueueDpcForIsr(in);
+
+	return TRUE;
 }
+
 
 /*
  * -------------------
@@ -372,13 +263,14 @@ event_devdrop(struct vbus_pci_handle_event *event)
 static void
 event_shmsignal(struct vbus_pci_handle_event *event)
 {
-	struct _signal *_signal = (struct _signal *)(unsigned long)event->handle;
+	struct _signal *s = (struct _signal *)(unsigned long)event->handle;
+
 }
 
 static void
 event_shmclose(struct vbus_pci_handle_event *event)
 {
-	struct _signal *_signal = (struct _signal *)(unsigned long)event->handle;
+	struct _signal *s= (struct _signal *)(unsigned long)event->handle;
 
 }
 
@@ -421,15 +313,19 @@ eventq_wakeup(struct ioq_notifier *notifier)
 
 		switch (event->eventid) {
 		case VBUS_PCI_EVENT_DEVADD:
+	vlog("event_wakeup:  devadd");
 			event_devadd(&event->data.add);
 			break;
 		case VBUS_PCI_EVENT_DEVDROP:
+	vlog("event_wakeup:  devdrop");
 			event_devdrop(&event->data.handle);
 			break;
 		case VBUS_PCI_EVENT_SHMSIGNAL:
+	vlog("event_wakeup:  shmsignal");
 			event_shmsignal(&event->data.handle);
 			break;
 		case VBUS_PCI_EVENT_SHMCLOSE:
+	vlog("event_wakeup:  shmclose");
 			event_shmclose(&event->data.handle);
 			break;
 		default:
@@ -459,6 +355,7 @@ static int
 eventq_signal_inject(struct shm_signal *signal)
 {
 	/* The eventq uses the special-case handle=0 */
+vlog("eventq signal inject!");
 	WRITE_REGISTER_ULONG(&vbus_pci.signals->eventq, 0);
 
 	return 0;
@@ -467,11 +364,11 @@ eventq_signal_inject(struct shm_signal *signal)
 static void
 eventq_signal_release(struct shm_signal *signal)
 {
+vlog("eventq signal release!");
 	if (signal)
 		VbusFree(signal);
 }
 
-static struct shm_signal_ops eventq_signal_ops;
 
 /*
  * -------------------
@@ -480,6 +377,7 @@ static struct shm_signal_ops eventq_signal_ops;
 static void
 eventq_ioq_release(struct ioq *ioq)
 {
+vlog("eventq ioq release!");
 	/* released as part of the vbus_pci object */
 }
 
@@ -537,7 +435,7 @@ eventq_init(int qlen)
 			return STATUS_NO_MORE_ENTRIES;
 	}
 
-	eventq_notifier.signal = &eventq_wakeup,
+	eventq_notifier.signal = eventq_wakeup,
 	vbus_pci.eventq.notifier = &eventq_notifier;
 
 	/*
@@ -610,6 +508,45 @@ eventq_ioq_init(size_t ringsize, struct ioq *ioq, struct ioq_ops *ops)
 
 	return STATUS_SUCCESS;
 }
+static NTSTATUS
+eventq_intr_enable(WDFINTERRUPT in, WDFDEVICE dev)
+{
+	vlog("eventq interrupt enable");
+	ShmSignalEnable(vbus_pci.eventq.signal, 0);
+	return STATUS_SUCCESS;
+}
+
+static NTSTATUS
+eventq_intr_disable(WDFINTERRUPT in, WDFDEVICE dev)
+{
+	vlog("eventq interrupt disable");
+	ShmSignalDisable(vbus_pci.eventq.signal, 0);
+	return STATUS_SUCCESS;
+}
+
+static VOID 
+eventq_intr_dpc(WDFINTERRUPT in, WDFOBJECT dev)
+{
+	_ShmSignalWakeup(vbus_pci.eventq.signal);
+	ShmSignalEnable(vbus_pci.eventq.signal, 0);
+}
+
+static BOOLEAN 
+eventq_intr_isr(WDFINTERRUPT in, ULONG mid)
+{
+	/* If we are currently disabled, discard this interrupt. */
+	if (!ShmSignalTestEnabled(vbus_pci.eventq.signal))
+		return FALSE;
+	vlog("*** eventq INTERUPPT ***");
+
+	/* disable, re-enabled in the DPC... */
+	ShmSignalDisable(vbus_pci.eventq.signal, 0);
+
+	WdfInterruptQueueDpcForIsr(in);
+
+	return TRUE;
+}
+
 
 static NTSTATUS
 vbus_pci_parse_resource(WDFCMRESLIST rt, ULONG i)
@@ -671,45 +608,6 @@ vbus_pci_map_resources(WDFCMRESLIST rt)
 	return rc;
 }
 
-static NTSTATUS
-VbusIntrEnable(WDFINTERRUPT in, WDFDEVICE dev)
-{
-vlog("interrupt enable");
-	ShmSignalEnable(vbus_pci.eventq.signal, 0);
-	return STATUS_SUCCESS;
-}
-
-static NTSTATUS
-VbusIntrDisable(WDFINTERRUPT in, WDFDEVICE dev)
-{
-vlog("interrupt disable");
-	ShmSignalDisable(vbus_pci.eventq.signal, 0);
-	return STATUS_SUCCESS;
-}
-
-static VOID 
-VbusIntrDPC(WDFINTERRUPT in, WDFOBJECT dev)
-{
-	_ShmSignalWakeup(vbus_pci.eventq.signal);
-	ShmSignalEnable(vbus_pci.eventq.signal, 0);
-}
-
-static BOOLEAN 
-VbusIntrIsr(WDFINTERRUPT in, ULONG mid)
-{
-	/* If we are currently disabled, discard this interrupt. */
-	if (!ShmSignalTestEnabled(vbus_pci.eventq.signal))
-		return FALSE;
-vlog("*** INTERUPPT ***");
-
-	/* disable, re-enabled in the DPC... */
-	ShmSignalDisable(vbus_pci.eventq.signal, 0);
-
-	WdfInterruptQueueDpcForIsr(in);
-
-	return TRUE;
-}
-
 /*
  * Init the Vbus.
  */
@@ -737,7 +635,6 @@ VbusPciPrepareHardware(WDFDEVICE dev, WDFCMRESLIST rt)
 	/* Negotiate and verify */
 	rc = vbus_pci_open();
 	if (rc < 0) {
-		vlog("vbus_pci_open: rc = %d", rc);
 		rc = STATUS_DEVICE_PROTOCOL_ERROR;
 		goto out_fail;
 	}
@@ -750,6 +647,7 @@ VbusPciPrepareHardware(WDFDEVICE dev, WDFCMRESLIST rt)
 	if (!NT_SUCCESS(rc))
 		goto out_fail;
 
+	eventq_ioq_ops.release = eventq_ioq_release;
 	rc = eventq_init(QLEN);
 	if (!NT_SUCCESS(rc))
 		goto out_fail;
@@ -764,7 +662,6 @@ VbusPciPrepareHardware(WDFDEVICE dev, WDFCMRESLIST rt)
 	}
 
 	vbus_pci.enabled = 1;
-vlog("success");
 
 	return STATUS_SUCCESS;
 
@@ -782,10 +679,9 @@ VbusPciCreateResources(WDFDEVICE dev)
 	NTSTATUS                rc;
 	WDF_INTERRUPT_CONFIG    ic;
 
-	WDF_INTERRUPT_CONFIG_INIT(&ic, VbusIntrIsr, VbusIntrDPC);
-
-	ic.EvtInterruptEnable  = VbusIntrEnable;
-	ic.EvtInterruptDisable = VbusIntrDisable;
+	WDF_INTERRUPT_CONFIG_INIT(&ic, eventq_intr_isr, eventq_intr_dpc);
+	ic.EvtInterruptEnable  = eventq_intr_enable;
+	ic.EvtInterruptDisable = eventq_intr_disable;
 	rc = WdfInterruptCreate(dev, &ic, WDF_NO_OBJECT_ATTRIBUTES, 
 			&vbus_pci.interrupt);
 	return rc;
@@ -802,7 +698,7 @@ NTSTATUS
 VbusPciD0Entry(WDFDEVICE dev, WDF_POWER_DEVICE_STATE prev_state)
 {
 vlog("VbusPciD0Entry: prev_state = %d", prev_state);
-	//ShmSignalEnable(vbus_pci.eventq.signal, 0);
+	ShmSignalEnable(vbus_pci.eventq.signal, 0);
 	return STATUS_SUCCESS;
 }
 
@@ -810,7 +706,7 @@ NTSTATUS
 VbusPciD0Exit(WDFDEVICE dev, WDF_POWER_DEVICE_STATE next_state)
 {
 vlog("VbusPciD0Exit: next_state = %d", next_state);
-	//ShmSignalDisable(vbus_pci.eventq.signal, 0);
+	ShmSignalDisable(vbus_pci.eventq.signal, 0);
 	return STATUS_SUCCESS;
 }
 
@@ -818,4 +714,187 @@ int
 VbusBridgeCall(unsigned long nr, void *data, unsigned long len)
 {
 	return (vbus_pci_bridgecall(nr, data, len));
+}
+
+NTSTATUS
+VbusProxyOpen(PDEVICE_OBJECT pdo) 
+{
+	struct vbus_pci_deviceopen 	params;
+	PPDO_DEVICE_DATA                pd;
+	WDFDEVICE		 	dev;
+	int 				ret;
+
+	/* Get the PDO context */
+	dev = WdfWdmDeviceGetWdfDeviceHandle(pdo);
+	pd = PdoGetData(dev);
+
+	params.devid   = (UINT32) pd->id;
+	params.version = VBUS_PCI_ABI_VERSION;
+	params.handle = 0;
+
+	ret = vbus_pci_buscall(VBUS_PCI_HC_DEVOPEN, &params, sizeof(params));
+	if (ret < 0)
+		return STATUS_NO_SUCH_DEVICE;
+
+	pd->handle = params.handle;
+
+	return STATUS_SUCCESS;
+}
+
+NTSTATUS
+VbusProxyClose(PDEVICE_OBJECT pdo)
+{
+	int ret;
+	PPDO_DEVICE_DATA                pd;
+	WDFDEVICE		 	dev;
+	struct _signal 			*_signal;
+
+	/* Get the PDO context */
+	dev = WdfWdmDeviceGetWdfDeviceHandle(pdo);
+	pd = PdoGetData(dev);
+
+	if (!pd->handle)
+		return STATUS_INVALID_HANDLE;
+
+	/* 
+	 * Remove the _signal's from the list.  These will be reclaimed 
+	 * when the host sends a SHMCLOSE. 
+	 */
+	WdfSpinLockAcquire(vbus_pci.lock);
+	while (!IsListEmpty(&pd->shms)) {
+		_signal = CONTAINING_RECORD(&pd->shms, struct _signal, list);
+		RemoveHeadList(&pd->shms);
+	}
+	WdfSpinLockRelease(vbus_pci.lock);
+
+	/*
+	 * The DEVICECLOSE will implicitly close all of the shm on the
+	 * host-side, so there is no need to do an explicit per-shm
+	 * hypercall
+	 */
+	ret = vbus_pci_buscall(VBUS_PCI_HC_DEVCLOSE, 
+			&pd->handle, sizeof(pd->handle));
+	if (ret < 0)
+		return STATUS_INVALID_DEVICE_REQUEST;
+
+	pd->handle = 0;
+
+	return STATUS_SUCCESS;
+}
+
+NTSTATUS
+VbusProxyDeviceCall(PDEVICE_OBJECT pdo, UINT32 func, void *data, 
+		size_t len, int flags)
+{
+	PPDO_DEVICE_DATA                pd;
+	WDFDEVICE		 	dev;
+	struct vbus_pci_devicecall 	params;
+	int				rc;
+
+	/* Get the PDO context */
+	dev = WdfWdmDeviceGetWdfDeviceHandle(pdo);
+	pd = PdoGetData(dev);
+
+	if (!pd->handle)
+		return STATUS_INVALID_HANDLE;
+
+	params.devh  = pd->handle;
+	params.func  = func;
+	params.datap = __pa(data);
+	params.len   = len;
+	params.flags = flags;
+
+	rc = vbus_pci_buscall(VBUS_PCI_HC_DEVCALL, &params, sizeof(params));
+	if (rc < 0) 
+		return STATUS_INVALID_DEVICE_REQUEST;
+
+	return STATUS_SUCCESS;
+}
+
+NTSTATUS
+VbusProxyDeviceShm(PDEVICE_OBJECT pdo, int prio, void *ptr, size_t len,
+		    struct shm_signal_desc *sdesc, struct shm_signal **signal,
+		    int flags)
+{
+	PPDO_DEVICE_DATA                pd;
+	WDFDEVICE		 	dev;
+	struct _signal 			*_signal = NULL;
+	struct vbus_pci_deviceshm 	params;
+	WDF_INTERRUPT_CONFIG		c;
+	WDF_OBJECT_ATTRIBUTES		attr;
+	PINT_DATA			id;
+	NTSTATUS			status;
+	int				rc;
+
+	/* Get the PDO context */
+	dev = WdfWdmDeviceGetWdfDeviceHandle(pdo);
+	pd = PdoGetData(dev);
+
+	if (!pd->handle)
+		return STATUS_INVALID_HANDLE;
+
+	params.devh   = pd->handle;
+	params.id     = (UINT32) pd->id;
+	params.flags  = flags;
+	params.datap  = __pa(ptr);
+	params.len    = len;
+
+	if (signal) {
+		/*
+		 * The signal descriptor must be embedded within the
+		 * provided ptr
+		 */
+		if (!sdesc || (len < sizeof(*sdesc)) 
+			|| (UINT64)sdesc < (UINT64)ptr
+		    	|| (UINT64)sdesc > ((UINT64)ptr + len - sizeof(*sdesc)))
+			return STATUS_INVALID_PARAMETER;
+
+		_signal = VbusAlloc(sizeof(*_signal));
+		if (!_signal)
+			return STATUS_NO_MEMORY;
+
+		_signal_ops.inject  = _signal_inject,
+		_signal_ops.release = _signal_release,
+		_signal_init(&_signal->signal, sdesc, &_signal_ops);
+		_signal_get(_signal);
+
+		_signal->pd = pd;
+
+		params.signal.offset = (UINT64)(unsigned long)sdesc -
+					(UINT64)(unsigned long)ptr;
+		params.signal.prio   = prio;
+		params.signal.cookie = (UINT64)(unsigned long)_signal;
+
+	} else
+		params.signal.offset = -1; /* this is a UINT32, but its ok */
+
+	status = STATUS_INVALID_DEVICE_REQUEST;
+	rc = vbus_pci_buscall(VBUS_PCI_HC_DEVSHM, &params, sizeof(params));
+	if (rc < 0) 
+		goto fail;
+
+	if (signal) {
+		/* Create the interrupt object */
+		WDF_INTERRUPT_CONFIG_INIT(&c, _signal_isr, _signal_dpc);
+		WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&attr, INT_DATA);
+		c.EvtInterruptEnable  = _signal_enable;
+		c.EvtInterruptDisable = _signal_disable;
+		status = WdfInterruptCreate(dev, &c, &attr, &pd->interrupt);
+		if (!NT_SUCCESS(status))
+			goto fail;
+		id = IntGetData(pd->interrupt);
+		id->sig = _signal;
+
+		/* Add to the list */
+		WdfSpinLockAcquire(vbus_pci.lock);
+		InsertTailList(&pd->shms, &_signal->list);
+		WdfSpinLockRelease(vbus_pci.lock);
+		*signal = &_signal->signal;
+	}
+
+	return STATUS_SUCCESS;
+
+fail:
+	VbusFree(_signal);
+	return status;
 }

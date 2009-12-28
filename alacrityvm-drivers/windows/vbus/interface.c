@@ -45,19 +45,18 @@ VbusInterfaceQueryMac(PUCHAR buffer)
  * vbus_pdo_open - Child device interface for open
  */
 NTSTATUS
-VbusInterfaceOpen(void)
+VbusInterfaceOpen(PDEVICE_OBJECT pdo)
 {
-	vlog("**** Hello World, this is vbus ***");
-	return STATUS_SUCCESS;
+	return (VbusProxyOpen(pdo));
 }
 
 /*
  * vbus_pdo_close - Child device interface for close
  */
 NTSTATUS
-VbusInterfaceClose(void)
+VbusInterfaceClose(PDEVICE_OBJECT pdo)
 {
-	return STATUS_SUCCESS;
+	return (VbusProxyClose(pdo));
 }
 
 /*
