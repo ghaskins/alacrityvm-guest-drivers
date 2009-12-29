@@ -105,7 +105,55 @@
 #define VENET_NO_LINK(_M) 	((_M)->state & (VNET_ADAPTER_NO_LINK))
 #define VENET_IS_BUSY(_M) 	((_M)->nBusySend || (_M)->nBusyRecv)
 
+/*
+ * Queue and NET_BUFFER support 
+ */
+typedef struct _QUEUE_ENTRY {
+	struct _QUEUE_ENTRY *next;
+} QUEUE_ENTRY, *PQUEUE_ENTRY;
 
+typedef struct _QUEUE_HEADER {
+	PQUEUE_ENTRY head;
+	PQUEUE_ENTRY tail;
+} QUEUE_HEADER, *PQUEUE_HEADER;
+
+#define InitializeQueueHeader(_q) (_q)->Head = (_q)->Tail = NULL;
+
+#define VENET_SET_LIST_COUNT(_nb) ((_nb)->MiniportReserved[1])
+#define VENET_GET_LIST_COUNT(_nb) ((ULONG)(PULONG)((_nb)->MiniportReserved[1]))
+#define IsQueueEmpty(_q) ((_q)->head == NULL)
+#define GetHeadQueue(_q) ((_q)->head)
+
+#define RemoveHeadQueue(_q)		\
+{					\
+	PQUEUE_ENTRY pNext;		\
+	pNext = (_q)->head->next;	\
+	(_q)->head = pNext;		\
+	if (pNext == NULL)		\
+                (_q)->tail = NULL;	\
+}
+
+#define InsertTailQueue(_h, _e)				\
+{							\
+	((PQUEUE_ENTRY)_e)->next = NULL;		\
+	if ((_h)->tail)					\
+		(_h)->tail->next = (PQUEUE_ENTRY)(_e);	\
+	else						\
+		(_h)->head = (PQUEUE_ENTRY)(_e);	\
+	(_h)->tail = (PQUEUE_ENTRY)(_e);		\
+}
+
+
+#define VNET_GET_NET_BUFFER_LIST_LINK(_nb)  (&(NET_BUFFER_LIST_NEXT_NBL(_nb)))
+#define VNET_GET_NET_BUFFER_LIST_NEXT_SEND(_nb) ((_nb)->MiniportReserved[0])
+                                
+#define VNET_GET_NET_BUFFER_LIST_REF_COUNT(_nb) \
+				((ULONG)(ULONG_PTR)((_nb)->MiniportReserved[1]))
+                                
+#define VNET_GET_NET_BUFFER_PREV(_nb) ((_nb)->MiniportReserved[0])
+#define VNET_GET_NET_BUFFER_LIST_FROM_QUEUE_LINK(_e) \
+			(CONTAINING_RECORD((_e), NET_BUFFER_LIST, next))
+                                
 
 /* Supported oid list */
 extern NDIS_OID VenetSupportedOids[];
@@ -164,10 +212,13 @@ typedef struct _ADAPTER {
 	ULONG		nBusyRecv;
 
 	/* Send Handling */
-	LIST_ENTRY	sendWaitList;
-	LIST_ENTRY	sendFreeList;
-	NDIS_SPIN_LOCK	sendLock;
-	ULONG		nBusySend;
+	QUEUE_HEADER		sendWaitQueue;
+	LIST_ENTRY		sendWaitList;
+	LIST_ENTRY		sendFreeList;
+	NDIS_SPIN_LOCK		sendLock;
+	ULONG			nBusySend;
+	ULONG			nWaitSend;
+	PNET_BUFFER_LIST	sendingNetBufferList;
 
 } ADAPTER, *PADAPTER;
 
@@ -189,6 +240,7 @@ static __inline VOID VENET_ADAPTER_PUT(PADAPTER a)
 	if (!a->refCount) 
 		NdisSetEvent(&a->removeEvent);
 }
+
 
 
 /*

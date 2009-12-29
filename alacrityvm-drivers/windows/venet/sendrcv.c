@@ -54,16 +54,23 @@ SrCountBuffers(PNET_BUFFER_LIST list)
 
 
 static __inline NDIS_STATUS             
-SrAdapterStatus(PADAPTER a)
+SrGetAdapterStatus(PADAPTER a)
 {                                               
-	NDIS_STATUS rc;                     
+	NDIS_STATUS rc = NDIS_STATUS_FAILURE;                     
 
 	if (VENET_TEST_FLAG(a, VNET_ADAPTER_RESET))
 		rc = NDIS_STATUS_RESET_IN_PROGRESS;
-	else if (VENET_TEST_FLAG(a, VNET_ADAPTER_NO_LINK))
-		rc = NDIS_STATUS_NO_CABLE;  
-	else
-		rc = NDIS_STATUS_FAILURE;
+	else if (VENET_IS_PAUSED(a)) 
+		rc = NDIS_STATUS_PAUSED;
+	else if (VENET_NO_LINK(a))
+		rc = NDIS_STATUS_DEVICE_FAILED;  
+	else if (VENET_TEST_FLAG(a, VNET_ADAPTER_HALT_IN_PROGRESS))
+		rc = NDIS_STATUS_CLOSING;
+	else if (VENET_TEST_FLAG(a, VNET_ADAPTER_SURPRISE_REMOVED))
+		rc = NDIS_STATUS_CLOSING;
+	else if (VENET_TEST_FLAG(a, VNET_ADAPTER_SHUTDOWN))
+		rc = NDIS_STATUS_CLOSING;
+
 	return rc;                          
 }                           
 
@@ -79,14 +86,26 @@ SrSetListStatus(PNET_BUFFER_LIST sendList, NDIS_STATUS status)
 	}
 }
 
+static VOID
+SrSendNetBuffer(PADAPTER a, PNET_BUFFER_LIST list, BOOLEAN isQueue,
+		BOOLEAN dlevel)
+{
+	UNREFERENCED_PARAMETER(a);
+	UNREFERENCED_PARAMETER(list);
+	UNREFERENCED_PARAMETER(isQueue);
+	UNREFERENCED_PARAMETER(dlevel);
+}
+
 VOID
 VenetSendNetBufs(NDIS_HANDLE handle, PNET_BUFFER_LIST sendList,
 		NDIS_PORT_NUMBER port, ULONG flags)
 {
-	PADAPTER 	a = (PADAPTER) handle;
-	BOOLEAN		dlevel = NDIS_TEST_SEND_AT_DISPATCH_LEVEL(flags);
-	NDIS_STATUS	rc = NDIS_STATUS_PENDING;
-	ULONG		complete_flags = 0;
+	PADAPTER 		a = (PADAPTER) handle;
+	BOOLEAN			dlevel =NDIS_TEST_SEND_AT_DISPATCH_LEVEL(flags);
+	NDIS_STATUS		rc = NDIS_STATUS_PENDING;
+	ULONG			complete_flags = 0;
+	PNET_BUFFER_LIST	curr;
+	PNET_BUFFER_LIST	next;
 
 	UNREFERENCED_PARAMETER(port);
 
@@ -99,36 +118,42 @@ VenetSendNetBufs(NDIS_HANDLE handle, PNET_BUFFER_LIST sendList,
 
 	SPIN_LOCK(&a->sendLock, dlevel);
 
-	if (VENET_IS_PAUSED(a))  {
-		/* 
-		 * If we are paused, we only need to set the 
-		 * completion state of the list and return.
-		 */
-		rc = NDIS_STATUS_PAUSED;
+	/*
+	 * If we cannot send packets at this time, return the failure.
+	 */
+	if (VENET_IS_NOT_READY(a)) {
+		rc = SrGetAdapterStatus(a);
+		SPIN_UNLOCK(&a->sendLock, dlevel);
+		SrSetListStatus(sendList, rc);
+		NdisMSendNetBufferListsComplete(a->adapterHandle, sendList, 
+				dlevel);
+		return;
 	}
-	else if (VENET_IS_NOT_READY(a)) {
 
-		rc = SrAdapterStatus(a);
+	/*
+	 * Queue or send...
+	 */
 
-		if (VENET_NO_LINK(a)) {
-			/* Queue the list */
+	for(curr = sendList; curr != NULL; curr = next) {
+		next = NET_BUFFER_LIST_NEXT_NBL(curr);
+		VENET_SET_LIST_COUNT(curr) = (PULONG) SrCountBuffers(curr);
+		
+		if (!IsQueueEmpty(&a->sendWaitQueue)) {
+			VNET_GET_NET_BUFFER_LIST_NEXT_SEND(curr) = 
+				 NET_BUFFER_LIST_FIRST_NB(curr);
+			NET_BUFFER_LIST_STATUS(curr) = NDIS_STATUS_SUCCESS;
+			InsertTailQueue(&a->sendWaitQueue, 
+				VNET_GET_NET_BUFFER_LIST_LINK(curr));
+			a->nWaitSend++;
+		}
+		else {
+			a->sendingNetBufferList = curr;
+			SrSendNetBuffer(a, curr, FALSE, dlevel);
 		}
 	}
-	else {
-		/* adapter is ready, send these */
-	}
-
 
 	SPIN_UNLOCK(&a->sendLock, dlevel);
 
-	/* 
-	 * If we're not pending this list, set the status.
-	 */
-	if (rc != NDIS_STATUS_PENDING) {
-		SrSetListStatus(sendList, rc);
-		NdisMSendNetBufferListsComplete(a->adapterHandle, 
-				sendList, complete_flags);
-	}
 }
 
 VOID

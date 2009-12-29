@@ -392,7 +392,6 @@ VenetInitialize(NDIS_HANDLE handle, NDIS_HANDLE driver_context,
 		PNDIS_MINIPORT_INIT_PARAMETERS params)
 {
 	NDIS_STATUS				rc = NDIS_STATUS_RESOURCES;
-	NTSTATUS				nrc;
 	PADAPTER				a = NULL;
 
 	UNREFERENCED_PARAMETER(driver_context);
