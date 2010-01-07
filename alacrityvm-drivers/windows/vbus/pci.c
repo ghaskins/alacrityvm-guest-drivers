@@ -27,6 +27,7 @@
 #include "ioq.h"
 #include "shm-signal.h"
 
+
 struct vbus_pci {
 	WDFSPINLOCK		lock;
 	WDFINTERRUPT		interrupt;
@@ -49,6 +50,17 @@ struct _signal {
 	LONG			refCount;
 	PPDO_DEVICE_DATA	pd;
 };
+
+
+
+/* 
+ * storage for the fastcall.
+ */
+struct vbus_pci_fastcall_desc 	fastparams;
+WDFSPINLOCK			fastlock;
+
+
+
 
 /* Persistent storage for the signal operations. */
 static struct shm_signal_ops _signal_ops;
@@ -93,7 +105,6 @@ vbus_pci_bridgecall(unsigned long nr, void *data, unsigned long len)
 	params.datap  = __pa(data);
 
 	/* Send over as array of 32bit words */
-
 	len = (sizeof(params) >> 2)  + (sizeof(params) % 4);
 
 	WdfSpinLockAcquire(vbus_pci.lock);
@@ -108,20 +119,33 @@ vbus_pci_bridgecall(unsigned long nr, void *data, unsigned long len)
 static int
 vbus_pci_buscall(unsigned long nr, void *data, unsigned long len)
 {
-	struct vbus_pci_fastcall_desc params;
-	int ret;
+	int rc;
 
-	params.call.vector = nr;
-	params.call.len    = len;
-	params.call.datap  = __pa(data);
+	WdfSpinLockAcquire(fastlock);
+	fastparams.call.vector = nr;
+	fastparams.call.len    = len;
+	fastparams.call.datap  = __pa(data);
+	WRITE_PORT_ULONG((PULONG) &vbus_pci.signals, 0);
+	rc = fastparams.result;
+	WdfSpinLockRelease(fastlock);
+
+	return rc;
+}
 
 
-	ret = vbus_pci_bridgecall(VBUS_PCI_BRIDGE_SLOWCALL, &params, 
-			sizeof(struct vbus_pci_fastcall_desc));
-	if (ret >= 0 ) 
-		ret = params.result;
+static int 
+vbus_pci_setup_fastcall(void)
+{
+	struct vbus_pci_call_desc	params;
+	int				rc;
 
-	return ret;
+	params.vector 	= 0;
+	params.len	= sizeof(struct vbus_pci_fastcall_desc);
+	params.datap 	= __pa(&fastparams);
+
+	rc = vbus_pci_bridgecall(VBUS_PCI_BRIDGE_FASTCALL_ADD, &params,
+			sizeof(params));
+	return rc;
 }
 
 
@@ -164,7 +188,7 @@ _signal_inject(struct shm_signal *signal)
 {
 	struct _signal *_signal = to_signal(signal);
 
-	WRITE_PORT_ULONG(&vbus_pci.signals->shmsignal, _signal->handle);
+	WRITE_PORT_ULONG((PULONG)&vbus_pci.signals->shmsignal, _signal->handle);
 
 	return 0;
 }
@@ -663,6 +687,11 @@ VbusPciPrepareHardware(WDFDEVICE dev, WDFCMRESLIST rt)
 	if (!NT_SUCCESS(rc))
 		return rc;
 
+	/* Create the spin used for buscalls */
+	rc = WdfSpinLockCreate(WDF_NO_OBJECT_ATTRIBUTES, &fastlock);
+	if (!NT_SUCCESS(rc))
+		return rc;
+
 	/* Get and map our pci hw resources */
 	rc = vbus_pci_map_resources(rt);
 	if (!NT_SUCCESS(rc))
@@ -672,6 +701,13 @@ VbusPciPrepareHardware(WDFDEVICE dev, WDFCMRESLIST rt)
 	rc = vbus_pci_open();
 	if (rc < 0) {
 		rc = STATUS_DEVICE_PROTOCOL_ERROR;
+		goto out_fail;
+	}
+
+	/* Setup a single fastcall region.  Only one for now */
+	rc = vbus_pci_setup_fastcall();
+	if (rc)  {
+		rc = STATUS_DEVICE_CONFIGURATION_ERROR;
 		goto out_fail;
 	}
 
@@ -759,7 +795,7 @@ VbusPciOpen(UINT64 id, UINT64 *bh)
 	int 				rc;
 
 	params.devid   = (UINT32) id;
-	params.version = VBUS_PCI_ABI_VERSION;
+	params.version = VBUS_PCI_HC_VERSION;
 	params.handle = 0;
 
 	rc = vbus_pci_buscall(VBUS_PCI_HC_DEVOPEN, &params, sizeof(params));
