@@ -166,25 +166,49 @@ VenetGetMacAddress(PADAPTER a)
 }
 
 NDIS_STATUS 
+VenetRegisterSG(PADAPTER a) 
+{
+	NDIS_SG_DMA_DESCRIPTION d;
+	NDIS_STATUS rc;
+
+	NdisZeroMemory(&d, sizeof(d));
+
+	d.Header.Type = NDIS_OBJECT_TYPE_SG_DMA_DESCRIPTION;
+	d.Header.Revision = NDIS_SG_DMA_DESCRIPTION_REVISION_1;
+	d.Header.Size = NDIS_SIZEOF_SG_DMA_DESCRIPTION_REVISION_1;
+	d.Flags = NDIS_SG_DMA_64_BIT_ADDRESS;
+	d.MaximumPhysicalMapping = ETH_MAX_PACKET_SIZE;
+	d.ProcessSGListHandler = VenetProcessSGList;
+	d.SharedMemAllocateCompleteHandler = NULL;
+	rc = NdisMRegisterScatterGatherDma(a->adapterHandle, &d, &a->dmaHandle);
+
+	a->sgSize = d.ScatterGatherListSize;
+
+	return rc;
+}
+
+NDIS_STATUS 
 VenetSetRegistrationAttributes(NDIS_HANDLE handle, PADAPTER a) 
 {
-	NDIS_MINIPORT_ADAPTER_ATTRIBUTES	attr;
+	NDIS_MINIPORT_ADAPTER_REGISTRATION_ATTRIBUTES	attr;
 
 	NdisZeroMemory(&attr, sizeof(attr));
-	attr.RegistrationAttributes.Header.Type = 
+	attr.Header.Type = 
 		NDIS_OBJECT_TYPE_MINIPORT_ADAPTER_REGISTRATION_ATTRIBUTES;
-	attr.RegistrationAttributes.Header.Revision = 
+	attr.Header.Revision = 
 		NDIS_MINIPORT_ADAPTER_REGISTRATION_ATTRIBUTES_REVISION_1;
-	attr.RegistrationAttributes.Header.Size = 
+	attr.Header.Size = 
 		sizeof(NDIS_MINIPORT_ADAPTER_REGISTRATION_ATTRIBUTES);
-	attr.RegistrationAttributes.MiniportAdapterContext = a;
-	attr.RegistrationAttributes.AttributeFlags = 
-		NDIS_MINIPORT_ATTRIBUTES_NO_HALT_ON_SUSPEND | 
-		NDIS_MINIPORT_ATTRIBUTES_NOT_CO_NDIS ;
-	attr.RegistrationAttributes.CheckForHangTimeInSeconds = 128;
-	attr.RegistrationAttributes.InterfaceType = NdisInterfaceInternal;
 
-	return (NdisMSetMiniportAttributes(handle, &attr));
+	attr.MiniportAdapterContext = a;
+	attr.AttributeFlags = NDIS_MINIPORT_ATTRIBUTES_NO_HALT_ON_SUSPEND | 
+			      NDIS_MINIPORT_ATTRIBUTES_NOT_CO_NDIS |
+			      NDIS_MINIPORT_ATTRIBUTES_BUS_MASTER;
+	attr.CheckForHangTimeInSeconds = 128;
+	attr.InterfaceType = NdisInterfaceInternal;
+
+	return (NdisMSetMiniportAttributes(handle,
+				(PNDIS_MINIPORT_ADAPTER_ATTRIBUTES) &attr));
 }
 
 static NDIS_STATUS
@@ -269,18 +293,67 @@ VenetRegistryParams(PADAPTER a)
 	return NDIS_STATUS_SUCCESS;
 }
 
-static NDIS_STATUS
-VenetSetupTx(PADAPTER a)
-{
-	UNREFERENCED_PARAMETER(a);
-	return NDIS_STATUS_SUCCESS;
-}
-
 static VOID
 VenetFreeTx(PADAPTER a)
 {
-	UNREFERENCED_PARAMETER(a);
+	LIST_ENTRY 	*e;
+	PTCB		t;
+
+	/* Free list */
+	while(!IsListEmpty(&a->tcbFree)) {
+		e = RemoveHeadList(&a->tcbFree);
+		t = CONTAINING_RECORD(e, TCB, list);
+		VenetFree(t->sgListBuffer, a->sgSize);
+		VenetFree(t, sizeof(ADAPTER));
+	}
+
+	/* Busy list.  Sanity check, should be empty */
+	while(!IsListEmpty(&a->tcbBusy)) {
+		e = RemoveHeadList(&a->tcbBusy);
+		t = CONTAINING_RECORD(e, TCB, list);
+		VenetFree(t->sgListBuffer, a->sgSize);
+		VenetFree(t, sizeof(ADAPTER));
+	}
+
+	if (a->tx_handle) 
+		a->vif.close(a->tx_handle);
+
+	a->tx_handle = NULL;
 }
+
+static NDIS_STATUS
+VenetSetupTx(PADAPTER a)
+{
+	ULONG 		i;
+	PTCB		t;
+
+	/* 
+	 * Allocate our TCB's.  This is the total number of 
+	 * active send packets we can have outstanding.
+	 */
+	for(i = 0; i < a->numTcbs; i++) {
+		t = (PTCB) VenetAlloc(sizeof(TCB));
+		if (!t) 
+			return STATUS_NO_MEMORY;
+		t->sgListBuffer = VenetAlloc(a->sgSize);
+		if (!t->sgListBuffer) {
+			VenetFree(t, sizeof(TCB));
+			return STATUS_NO_MEMORY;
+		}
+		t->adapter = (PVOID) a;
+		InsertHeadList(&a->tcbFree, &t->list);
+	}
+	a->numTCBsFree = a->numTcbs;
+
+	a->tx_handle = a->vif.open(VenetTxHandler);
+	if (!a->tx_handle) {
+		VenetFreeTx(a);
+		return NDIS_STATUS_FAILURE;
+	}
+
+	return NDIS_STATUS_SUCCESS;
+}
+
 
 static NDIS_STATUS 
 VenetSetupRx(PADAPTER a)
@@ -311,9 +384,11 @@ VenetFreeRx(PADAPTER a)
 static VOID 
 VenetQuiesce(PADAPTER a)
 {
-
 	/*  we are shutting down, deal with remaining packets. */
 	UNREFERENCED_PARAMETER(a);
+
+	/* Wait for any outstanding TX to complete. */
+	NdisWaitEvent(&a->sendEvent, 0);
 
 }
 
@@ -326,8 +401,9 @@ VenetSetupAdapter(PADAPTER a)
 
 	NdisAllocateSpinLock(&a->lock);
 	NdisInitializeListHead(&a->list);
-	NdisInitializeListHead(&a->sendWaitList);
-	NdisInitializeListHead(&a->sendFreeList);
+
+	QueueInit(&a->sendQueue);
+
 	NdisInitializeListHead(&a->recvFreeList);
 	NdisInitializeListHead(&a->recvToProcess);
 
@@ -335,6 +411,13 @@ VenetSetupAdapter(PADAPTER a)
 	NdisAllocateSpinLock(&a->sendLock);
 
 	NdisInitializeEvent(&a->removeEvent);
+
+	/* We use the opposite sense of the sendEvent, 
+	 * SET == No Tx in use 
+	 * UNSET == Tx in use 
+	 */
+	NdisInitializeEvent(&a->sendEvent);
+	NdisSetEvent(&a->sendEvent);
 
 	/* Create Rest and receive timers. */
 	NdisZeroMemory(&timer, sizeof(NDIS_TIMER_CHARACTERISTICS));
@@ -352,6 +435,11 @@ VenetSetupAdapter(PADAPTER a)
 	timer.TimerFunction = VenetReceiveTimerDpc;
 	timer.FunctionContext = a;
 	rc = NdisAllocateTimerObject(a->adapterHandle, &timer, &a->recvTimer);
+	if (rc != NDIS_STATUS_SUCCESS) 
+		goto done;
+
+	/* Register SG handling for Tx */
+	rc = VenetRegisterSG(a);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto done;
 
@@ -399,16 +487,20 @@ VenetInitialize(NDIS_HANDLE handle, NDIS_HANDLE driver_context,
 
 	vlog("VenetInitialize started");
 
-	a =  NdisAllocateMemoryWithTagPriority(handle, sizeof(ADAPTER),
-			VNET, HighPoolPriority);
+	a =  VenetAlloc(sizeof(ADAPTER));
 	if (!a) 
 		goto err;
-	NdisZeroMemory(a, sizeof(ADAPTER));
 
 	/* Set default values */
 	a->lookAhead = NIC_MAX_LOOKAHEAD;
 	a->adapterHandle = handle;
 	VENET_SET_FLAG(a, VNET_DISCONNECTED);
+	InitializeListHead(&a->tcbFree);
+	InitializeListHead(&a->tcbBusy);
+	a->numTcbs = NIC_MAX_BUSY_SENDS;
+
+	NdisInitializeEvent(&a->sendEvent);
+
 
 	rc = VenetGetInterface(handle, a);
 	if (rc != NDIS_STATUS_SUCCESS) 
@@ -469,19 +561,19 @@ VenetHalt(NDIS_HANDLE handle, NDIS_HALT_ACTION action)
 	VENET_ADAPTER_PUT(a);
 	NdisWaitEvent(&a->removeEvent, 5000);
 
-	vlog("halt spin and timers ");
 	/* Free resources */
 	NdisFreeSpinLock(&a->Lock);
 	NdisFreeTimerObject(a->resetTimer);
 	NdisFreeTimerObject(a->recvTimer);
 
+	NdisMDeregisterScatterGatherDma(a->dmaHandle);
+
 	VenetFreeRx(a);
 	VenetFreeTx(a);
 
-	vlog("halt send/recv locks");
 	NdisFreeSpinLock(&a->sendLock);
 	NdisFreeSpinLock(&a->recvLock);
-	NdisFreeMemory(a, sizeof(ADAPTER), 0);
+	VenetFree(a, sizeof(ADAPTER));
 	vlog("halt done");
 }
 
@@ -525,6 +617,9 @@ VenetRestart(NDIS_HANDLE handle, PNDIS_MINIPORT_RESTART_PARAMETERS parms)
 	VENET_CLEAR_FLAG(a, VNET_ADAPTER_PAUSED);
 	vlog("restart called");
 
+	/* Reinit the send event. */
+	NdisSetEvent(&a->sendEvent);
+
 	return NDIS_STATUS_SUCCESS;
 }
 
@@ -559,6 +654,9 @@ VenetReset(NDIS_HANDLE handle, PBOOLEAN addr_reset)
 
 	/* Free any pending sends... */
 	VenetFreeQueuedSend(a, NDIS_STATUS_RESET_IN_PROGRESS);
+
+	/* Reinit the send event. */
+	NdisSetEvent(&a->sendEvent);
 
 	/* Done with reset */
 	VENET_CLEAR_FLAG(a, VNET_ADAPTER_RESET);
@@ -673,4 +771,59 @@ DriverEntry(PVOID obj,PVOID path)
 	
 	vlog("DriverEntry return rc = %d", rc);
 	return rc;
+}
+
+PVOID 
+VenetAlloc(ULONG size)
+{
+	PVOID	p;
+
+	p =  NdisAllocateMemoryWithTagPriority(mp_handle, size, VNET, 
+			HighPoolPriority);
+	if (p) 
+		NdisZeroMemory(p, size);
+	return p;
+}
+
+VOID VenetFree(PVOID p, ULONG size)
+{
+	if (p) 
+		NdisFreeMemory(p, size, 0);
+}
+
+/* Can only be called with sendLock held */
+PTCB 
+VenetAllocTCB(PADAPTER a, PNET_BUFFER_LIST nbl)
+{
+	PLIST_ENTRY	e;
+	PTCB		t = NULL;
+
+	if (!IsListEmpty(&a->tcbFree)) {
+		e = RemoveHeadList(&a->tcbFree);
+		t = CONTAINING_RECORD(e, TCB, list);
+		t->status = NDIS_STATUS_SUCCESS;
+		t->nb_count = 0;
+		t->nbl = nbl;
+		InsertHeadList(&a->tcbBusy, &t->list);
+		NdisResetEvent(&a->sendEvent);
+		InterlockedDecrement((PLONG) &a->numTCBsFree);
+	}
+	return t;
+}
+/* Can only be called with sendLock held */
+VOID 
+VenetReleaseTCB(PTCB t)
+{
+	PADAPTER	a = (PADAPTER) t->adapter;
+
+	RemoveEntryList(&t->list);
+	InsertHeadList(&a->tcbFree, &t->list);
+	InterlockedIncrement((PLONG) &a->numTCBsFree);
+
+	/* 
+	 * Signal the event that TX is quiesced
+	 */
+	if (IsListEmpty(&a->tcbBusy)) {
+		NdisSetEvent(&a->sendEvent);
+	}
 }

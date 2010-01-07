@@ -25,7 +25,7 @@ copy Z:\vbus\objchk_win7_x86\i386\vbus.sys C:\tmp
 copy Z:\vbus\objchk_win7_x86\i386\vbus.inf C:\tmp
 cd \tmp
 inf2cat /driver:C:\tmp /os:7_X86
-signtool sign /v /s root /n vbus /t http://verisign.timestamp.com/scripts/timestamp.dll vbus.cat
+signtool sign /v /s root /n vbus /t "http://verisign.timestamp.com/scripts/timestamp.dll" vbus.cat
 devcon update  vbus.inf PCI\VEN_11DA^&DEV_2000
 
 :: Now install venet, again creating the catalog.
@@ -35,7 +35,7 @@ copy Z:\venet\objchk_win7_x86\i386\venet.sys \tmp
 copy Z:\venet\objchk_win7_x86\i386\netnovl.inf \tmp
 cd \tmp
 inf2cat /driver:C:\tmp /os:7_X86
-signtool sign /v /s root /n vbus /t http://verisign.timestamp.com/scripts/timestamp.dll venet.cat
+signtool sign /v /s root /n vbus /t "http://verisign.timestamp.com/scripts/timestamp.dll" venet.cat
 devcon update  netnovl.inf VBUS\virtual-ethernet
 
 :: copy setup log...

@@ -58,6 +58,17 @@
 				NDIS_PACKET_TYPE_PROMISCUOUS | 	\
 				NDIS_PACKET_TYPE_ALL_MULTICAST)
 
+#define P8021_MAC_LEN 		12
+#define P8021_TPID_BYTE		12
+#define P8021_TCI_BYTE		14
+#define P8021_VLAN_BYTE		15
+#define P8021_BYTE_LEN		4
+#define P8021_BIT_SHIFT		5
+#define P8021_TPID_TYPE		0x0081  
+#define P8021_HOST_MASK		0xfff8  
+#define P8021_NETWORK_MASK	0x1f    
+
+
 
 /* Tag for allocations */
 #define VNET	'vnet'
@@ -103,60 +114,87 @@
 #define VENET_IS_READY(_M) 	(!((_M)->state & (VNET_IS_NOT_READY_MASK)))
 #define VENET_IS_PAUSED(_M) 	((_M)->state & (VNET_ADAPTER_PAUSED))
 #define VENET_NO_LINK(_M) 	((_M)->state & (VNET_ADAPTER_NO_LINK))
-#define VENET_IS_BUSY(_M) 	((_M)->nBusySend || (_M)->nBusyRecv)
+#define VENET_IS_BUSY(_M) 	((!IsListEmpty(&(_M)->tcbBusy)) || (_M)->nBusyRecv)
+
+#define VENET_SET_NBL_COUNT(nbl, cnt) 	(nbl)->MiniportReserved[0] =  (PVOID) cnt
+#define VENET_GET_NBL_COUNT(nbl)	(ULONG) (nbl)->MiniportReserved[0]
+#define VENET_AVAILABLE_TCBS(a)		(a)->numTCBsFree
 
 /*
  * Queue and NET_BUFFER support 
  */
 typedef struct _QUEUE_ENTRY {
-	struct _QUEUE_ENTRY *next;
+	struct _QUEUE_ENTRY *Next;
 } QUEUE_ENTRY, *PQUEUE_ENTRY;
 
 typedef struct _QUEUE_HEADER {
-	PQUEUE_ENTRY head;
-	PQUEUE_ENTRY tail;
+	PQUEUE_ENTRY Head;
+	PQUEUE_ENTRY Tail;
 } QUEUE_HEADER, *PQUEUE_HEADER;
 
-#define InitializeQueueHeader(_q) (_q)->Head = (_q)->Tail = NULL;
+#define QueueInit(_q) (_q)->Head = (_q)->Tail = NULL;
 
-#define VENET_SET_LIST_COUNT(_nb) ((_nb)->MiniportReserved[1])
-#define VENET_GET_LIST_COUNT(_nb) ((ULONG)(PULONG)((_nb)->MiniportReserved[1]))
-#define IsQueueEmpty(_q) ((_q)->head == NULL)
-#define GetHeadQueue(_q) ((_q)->head)
+#define QueueEmpty(_q) ((_q)->Head == NULL)
+#define QUEUE_NBL_FROM_ENTRY(_e) 	((PNET_BUFFER_LIST) (_e))
 
-#define RemoveHeadQueue(_q)		\
-{					\
-	PQUEUE_ENTRY pNext;		\
-	pNext = (_q)->head->next;	\
-	(_q)->head = pNext;		\
-	if (pNext == NULL)		\
-                (_q)->tail = NULL;	\
+/* Assumes non-empty queue */
+__inline PNET_BUFFER_LIST 
+QueueDeque(PQUEUE_HEADER q)
+{					
+	PQUEUE_ENTRY 	curr;
+
+	curr = q->Head;
+	q->Head = curr->Next;
+
+	if (q->Head == NULL)
+                q->Tail = NULL;
+
+	curr->Next = NULL;
+	return QUEUE_NBL_FROM_ENTRY(curr);
 }
 
-#define InsertTailQueue(_h, _e)				\
-{							\
-	((PQUEUE_ENTRY)_e)->next = NULL;		\
-	if ((_h)->tail)					\
-		(_h)->tail->next = (PQUEUE_ENTRY)(_e);	\
-	else						\
-		(_h)->head = (PQUEUE_ENTRY)(_e);	\
-	(_h)->tail = (PQUEUE_ENTRY)(_e);		\
+__inline VOID
+QueueEnqueTail(PQUEUE_HEADER q, PNET_BUFFER_LIST nbl)
+{
+	PQUEUE_ENTRY 	e = (PQUEUE_ENTRY) nbl;
+
+	e->Next = NULL;
+	if (QueueEmpty(q)) 
+		q->Head = e;
+	else
+		q->Tail->Next = e;
+
+	q->Tail = e;
 }
 
+__inline VOID
+QueueEnqueHead(PQUEUE_HEADER q, PNET_BUFFER_LIST nbl)
+{
+	PQUEUE_ENTRY 	e = (PQUEUE_ENTRY) nbl;
+	
+	e->Next = q->Head;
+	q->Head = e;
+	if (!q->Tail)
+		q->Tail = e;
+}
 
-#define VNET_GET_NET_BUFFER_LIST_LINK(_nb)  (&(NET_BUFFER_LIST_NEXT_NBL(_nb)))
-#define VNET_GET_NET_BUFFER_LIST_NEXT_SEND(_nb) ((_nb)->MiniportReserved[0])
-                                
-#define VNET_GET_NET_BUFFER_LIST_REF_COUNT(_nb) \
-				((ULONG)(ULONG_PTR)((_nb)->MiniportReserved[1]))
-                                
-#define VNET_GET_NET_BUFFER_PREV(_nb) ((_nb)->MiniportReserved[0])
-#define VNET_GET_NET_BUFFER_LIST_FROM_QUEUE_LINK(_e) \
-			(CONTAINING_RECORD((_e), NET_BUFFER_LIST, next))
-                                
 
 /* Supported oid list */
 extern NDIS_OID VenetSupportedOids[];
+
+
+/* Transfer Control Block */
+typedef struct _TCB {
+	LIST_ENTRY		list;
+	BOOLEAN			isCancelled;
+	PVOID			sgListBuffer;
+	PNET_BUFFER_LIST	nbl;
+	PVOID			adapter;
+	NDIS_STATUS		status;
+	ULONG			nb_count;
+	UCHAR			data[NIC_BUFFER_SIZE];
+} TCB, *PTCB;
+
 
 /* Adapter Context area */
 typedef struct _ADAPTER {
@@ -212,14 +250,17 @@ typedef struct _ADAPTER {
 	ULONG		nBusyRecv;
 
 	/* Send Handling */
-	QUEUE_HEADER		sendWaitQueue;
-	LIST_ENTRY		sendWaitList;
-	LIST_ENTRY		sendFreeList;
+	PVOID			tx_handle;
+	ULONG			numTcbs;
+	ULONG			numTCBsFree;
+	QUEUE_HEADER		sendQueue;
 	NDIS_SPIN_LOCK		sendLock;
-	ULONG			nBusySend;
-	ULONG			nWaitSend;
-	PNET_BUFFER_LIST	sendingNetBufferList;
-
+	NDIS_EVENT		sendEvent;
+	ULONG			sgSize;		/* SG List buffer size */
+	PNET_BUFFER_LIST	sendingNBL;
+	NDIS_HANDLE		dmaHandle;
+	LIST_ENTRY		tcbFree;
+	LIST_ENTRY		tcbBusy;
 } ADAPTER, *PADAPTER;
 
 
@@ -272,11 +313,19 @@ MINIPORT_RESET				VenetReset;
 MINIPORT_DEVICE_PNP_EVENT_NOTIFY	VenetDevicePnpEvent;
 MINIPORT_SHUTDOWN			VenetShutdown;
 MINIPORT_CANCEL_OID_REQUEST		VenetCancelOidRequest;
+MINIPORT_PROCESS_SG_LIST		VenetProcessSGList;
+
+extern PVOID VenetAlloc(ULONG size);
+extern VOID  VenetFree(PVOID p, ULONG size);
+
+extern PTCB VenetAllocTCB(PADAPTER a, PNET_BUFFER_LIST nbl);
+extern VOID VenetReleaseTCB(PTCB tcb);
 
 extern VOID VenetSetSyncFlag(PADAPTER a, int flag);
 extern VOID VenetFreeQueuedSend(PADAPTER a, NDIS_STATUS status);
 extern VOID VenetReceivePackets(PADAPTER a);
 extern VOID VenetFreeQueuedPackets(PADAPTER a);
+extern VOID VenetTxHandler(PVOID data);
 
 
 #endif /* _VENET_H_ */
