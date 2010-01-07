@@ -399,18 +399,25 @@ VenetSetupAdapter(PADAPTER a)
 	NDIS_STATUS			rc;
 	NDIS_TIMER_CHARACTERISTICS	timer;	       
 
-	NdisAllocateSpinLock(&a->lock);
-	NdisInitializeListHead(&a->list);
+	a->lookAhead = NIC_MAX_LOOKAHEAD;
+	a->numTcbs = NIC_MAX_BUSY_SENDS;
+	a->refCount = 1;
+	VENET_SET_FLAG(a, VNET_DISCONNECTED);
 
 	QueueInit(&a->sendQueue);
 
 	NdisInitializeListHead(&a->recvFreeList);
 	NdisInitializeListHead(&a->recvToProcess);
+	NdisInitializeListHead(&a->tcbFree);
+	NdisInitializeListHead(&a->tcbBusy);
 
+	NdisAllocateSpinLock(&a->lock);
 	NdisAllocateSpinLock(&a->recvLock);
 	NdisAllocateSpinLock(&a->sendLock);
 
 	NdisInitializeEvent(&a->removeEvent);
+	NdisInitializeEvent(&a->sendEvent);
+
 
 	/* We use the opposite sense of the sendEvent, 
 	 * SET == No Tx in use 
@@ -433,21 +440,9 @@ VenetSetupAdapter(PADAPTER a)
 		goto done;
 
 	timer.TimerFunction = VenetReceiveTimerDpc;
-	timer.FunctionContext = a;
 	rc = NdisAllocateTimerObject(a->adapterHandle, &timer, &a->recvTimer);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto done;
-
-	/* Register SG handling for Tx */
-	rc = VenetRegisterSG(a);
-	if (rc != NDIS_STATUS_SUCCESS) 
-		goto done;
-
-	rc = VenetSetupRx(a);
-	if (rc != NDIS_STATUS_SUCCESS) 
-		goto done;
-
-	rc = VenetSetupTx(a);
 
 done:
 	return rc;
@@ -499,18 +494,28 @@ VenetInitialize(NDIS_HANDLE handle, NDIS_HANDLE driver_context,
 	if (!a) 
 		goto err;
 
-	/* Set default values */
-	a->lookAhead = NIC_MAX_LOOKAHEAD;
 	a->adapterHandle = handle;
-	VENET_SET_FLAG(a, VNET_DISCONNECTED);
-	InitializeListHead(&a->tcbFree);
-	InitializeListHead(&a->tcbBusy);
-	a->numTcbs = NIC_MAX_BUSY_SENDS;
 
-	NdisInitializeEvent(&a->sendEvent);
+	NdisInitializeListHead(&a->list);
+	VenetAttach(a);
 
+	rc = VenetSetupAdapter(a);
+	if (rc != NDIS_STATUS_SUCCESS) 
+		goto err;
 
 	rc = VenetGetInterface(handle, a);
+	if (rc != NDIS_STATUS_SUCCESS) 
+		goto err;
+
+	rc = VenetRegisterSG(a);
+	if (rc != NDIS_STATUS_SUCCESS) 
+		goto err;
+
+	rc = VenetSetupRx(a);
+	if (rc != NDIS_STATUS_SUCCESS) 
+		goto err;
+
+	rc = VenetSetupTx(a);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto err;
 
@@ -530,19 +535,13 @@ VenetInitialize(NDIS_HANDLE handle, NDIS_HANDLE driver_context,
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto err;
 
-	rc = VenetSetupAdapter(a);
-	if (rc != NDIS_STATUS_SUCCESS) 
-		goto err;
-
-	VenetAttach(a);
 	VENET_CLEAR_FLAG(a, VNET_DISCONNECTED);
 
 	vlog("VenetInitialize return SUCCESS");
 	return NDIS_STATUS_SUCCESS;
+
 err:
-
 	vlog("VenetInitialize err return!!");
-
 	VenetHalt(a, 0);
 
 	return rc;
@@ -559,22 +558,22 @@ VenetHalt(NDIS_HANDLE handle, NDIS_HALT_ACTION action)
 
 	VENET_SET_SYNC_FLAG(a, VNET_ADAPTER_HALT_IN_PROGRESS);
 
-	VenetShutdown(a, NdisShutdownPowerOff);
-
 	VenetDetach(a);
 	VenetFreeQueuedSend(a, NDIS_STATUS_FAILURE);
 
 	/* Now dec and wait for the remove event */
-	vlog("halt refcount = %d", a->refCount);
 	VENET_ADAPTER_PUT(a);
 	NdisWaitEvent(&a->removeEvent, 5000);
 
 	/* Free resources */
 	NdisFreeSpinLock(&a->Lock);
-	NdisFreeTimerObject(a->resetTimer);
-	NdisFreeTimerObject(a->recvTimer);
+	if (a->resetTimer)
+		NdisFreeTimerObject(a->resetTimer);
+	if (a->recvTimer)
+		NdisFreeTimerObject(a->recvTimer);
 
-	NdisMDeregisterScatterGatherDma(a->dmaHandle);
+	if (a->dmaHandle)
+		NdisMDeregisterScatterGatherDma(a->dmaHandle);
 
 	VenetFreeRx(a);
 	VenetFreeTx(a);
@@ -585,7 +584,6 @@ VenetHalt(NDIS_HANDLE handle, NDIS_HALT_ACTION action)
 	NdisFreeSpinLock(&a->sendLock);
 	NdisFreeSpinLock(&a->recvLock);
 	VenetFree(a, sizeof(ADAPTER));
-	vlog("halt done");
 }
 
 VOID 
