@@ -25,36 +25,32 @@
 #include "precomp.h"
 
 /*
- * vbus_pdo_open - Child device interface for open
- */
-int
-VbusInterfaceQueryMac(PUCHAR buffer)
-{
-
-	/* XXX for now, create one */
-	buffer[0] = 0x01;
-	buffer[1] = 0xFF;
-	buffer[2] = 0xEF;
-	buffer[3] = 0x23;
-	buffer[4] = 0x11;
-	buffer[5] = 0x01;
-
-	return 0;
-}
-/*
  * VbusInterfaceOpen - Child device interface for open
  */
 int
-VbusInterfaceOpen(PDEVICE_OBJECT pdo, UINT64 *bh)
+VbusInterfaceOpen(PDEVICE_OBJECT pdo, int version, UINT64 *bh, IoqCB func)
 {
 	PPDO_DEVICE_DATA                pd;
 	WDFDEVICE		 	dev;
-	int				rc;
+	struct vbus_pci_deviceopen 	params;
+	int				rc = 0;
 
 	/* Get the PDO context */
 	dev = WdfWdmDeviceGetWdfDeviceHandle(pdo);
 	pd = PdoGetData(dev);
-	rc = VbusPciOpen(pd->id, bh);
+
+	/* Open device */
+	params.devid   = (UINT32) pd->id;
+	params.version = version;
+	params.handle = 0;
+	rc = VbusBusCall(VBUS_PCI_HC_DEVOPEN, &params, sizeof(params));
+	if (rc < 0)
+		return -1;
+
+	pd->bh = params.handle;
+
+	/* Create event IOQ */
+
 
 	vlog("**** interface open called rc = %d****", rc);
 	return rc;
@@ -66,22 +62,38 @@ VbusInterfaceOpen(PDEVICE_OBJECT pdo, UINT64 *bh)
 void
 VbusInterfaceClose(UINT64 bh)
 {
-	vlog("**** interface close called ****");
-	VbusPciClose(bh);
+	/*
+	 * The DEVICECLOSE will implicitly close all of the shm on the
+	 * host-side, so there is no need to do an explicit per-shm
+	 * hypercall
+	 */
+	if (bh) {
+		VbusBusCall(VBUS_PCI_HC_DEVCLOSE, 
+			&bh, sizeof(bh), 0);
+	}
 }
 
 /*
- * VbusInterfaceAttach - attach a tx/rx ioq
+ * VbusInterfaceCall - Child device interface for buscall
+ */
+int
+VbusInterfaceCall(UINT64 bh, int type, void *data, int len, int flags)
+{
+	vlog("**** interface call called ****");
+	return VbusBusCall(type, data, len);
+}
+
+/*
+ * VbusInterfaceCreate -  Create an IOQ.
  */
 void *
-VbusInterfaceAttach(UINT64 bh, void *data, int type, Notifier func)
+VbusInterfaceCreate(UINT64 bh, int qlen, void *data, int type, IoqCB func)
 {
 	PIOH		ioh;
 	UNREFERENCED_PARAMETER(type);
 
 	ioh = VbusAlloc(sizeof(IOH));
 	if (ioh) {
-		ioh->bh = bh;
 		ioh->type = type;
 		ioh->notify_func = func;
 		ioh->context = data;
@@ -91,10 +103,10 @@ VbusInterfaceAttach(UINT64 bh, void *data, int type, Notifier func)
 }
 
 /*
- * VbusInterfaceDetach - detach a tx/rx ioq
+ * VbusInterfaceDestroy - destroy an IOQ
  */
 void
-VbusInterfaceDetach(void *handle)
+VbusInterfaceDestroy(void *handle)
 {
 	if (handle) {
 		VbusFree(handle);
@@ -102,6 +114,26 @@ VbusInterfaceDetach(void *handle)
 
 	vlog("**** interface detach called ****");
 	return ;
+}
+
+/*
+ * VbusInterfaceIoqctl -  IOQ cntl ops.
+ */
+int
+VbusInterfaceIoqctl(void *handle, int op)
+{
+	vlog("**** interface ioqctl called ****");
+	return 0;
+}
+
+/*
+ * VbusInterfaceSeek -  IOQ  seek
+ */
+int
+VbusInterfaceSeek(void *handle, int offset)
+{
+	vlog("**** interface seek called ****");
+	return 0;
 }
 
 /*

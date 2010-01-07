@@ -794,43 +794,9 @@ VbusBusCall(ULONG nr, PVOID data, ULONG len)
 	return (vbus_pci_buscall(nr, data, len));
 }
 
-int
-VbusPciOpen(UINT64 id, UINT64 *bh)
-{
-	struct vbus_pci_deviceopen 	params;
-	int 				rc;
-
-	params.devid   = (UINT32) id;
-	params.version = VENET_VERSION;
-	params.handle = 0;
-
-	rc = vbus_pci_buscall(VBUS_PCI_HC_DEVOPEN, &params, sizeof(params));
-	if (rc < 0)
-		return -1;
-
-	*bh = params.handle;
-
-	return 0;
-}
-
-void
-VbusPciClose(UINT64 bh)
-{
-	/*
-	 * The DEVICECLOSE will implicitly close all of the shm on the
-	 * host-side, so there is no need to do an explicit per-shm
-	 * hypercall
-	 */
-	if (bh) {
-		vbus_pci_buscall(VBUS_PCI_HC_DEVCLOSE, 
-			&bh, sizeof(bh));
-	}
-}
-
 NTSTATUS
 VbusProxyDeviceCall(PDEVICE_OBJECT pdo, UINT32 func, void *data, 
-		size_t len, int flags)
-{
+		size_t len, int flags) {
 	PPDO_DEVICE_DATA                pd;
 	WDFDEVICE		 	dev;
 	struct vbus_pci_devicecall 	params;

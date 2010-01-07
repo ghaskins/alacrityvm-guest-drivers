@@ -32,6 +32,7 @@
 #include <initguid.h>
 
 #include <vbus_if.h>
+#include "venet_dev.h"
 
 #define VENET_NDIS_MAJOR_VERSION	6
 #define VENET_NDIS_MINOR_VERSION	0

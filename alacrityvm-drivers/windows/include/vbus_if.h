@@ -32,24 +32,32 @@ DEFINE_GUID(VBUS_INTERFACE_GUID,
 #define VBUS_IF_VERSION		1
 #define VBUS_IF_SIZE		(sizeof(VBUS_IF))
 
-typedef void (*Notifier)(void *data);
+typedef void (*IoqCB)(void *data);
 
-#define VBUS_ATTACH_SEND		0x02
-#define VBUS_ATTACH_RECV		0x04
+/* IOQ types */
+#define VBUS_IOQ_SEND		0x02
+#define VBUS_IOQ_RECV		0x04
+
+/* ioqctl operations */
+#define VBUS_OP_ENABLE		0x11
+#define VBUS_OP_DISABLE		0x22
+#define VBUS_OP_SIGNAL		0x33
 
 /*
  * Vbus Child device interface.  
  */
 typedef struct _VBUS_IF {
-    INTERFACE		inf;
-    int			(*open)(PDEVICE_OBJECT pdo, UINT64 *bh);
-    void		(*close)(UINT64 bh);
-    void		*(*attach)(UINT64 bh, void *data, int type, Notifier func);
-    void		(*detach)(void *handle);
-    int			(*inject)(void *handle);
-    int			(*send)(void *handle, void *data, int len);
-    int			(*recv)(void *handle);
-    int			(*querymac)(void *buffer);
+    INTERFACE	inf;
+    int		(*open)(PDEVICE_OBJECT pdo, int ver, UINT64 *bh, IoqCB func);
+    void	(*close)(UINT64 bh);
+    int 	(*call)(UINT64 bh, int type, void *data, int len, int flags);
+
+    void	*(*create)(UINT64 bh, int len, void *data, int type,IoqCB func);
+    void	(*destroy)(void *handle);
+    int		(*ioqctl)(void *handle, int op);
+    int		(*seek)(void *handle, int offset);
+    int		(*send)(void *handle, void *data, int len);
+    int		(*recv)(void *handle);
 } VBUS_IF, *VBUS_PIF;
 
 

@@ -291,7 +291,7 @@ VenetFreeTx(PADAPTER a)
 		VenetFree(t, sizeof(ADAPTER));
 	}
 
-	a->vif.detach(a->txHandle);
+	a->vif.destroy(a->txHandle);
 	a->txHandle = NULL;
 }
 
@@ -314,7 +314,7 @@ VenetSetupTx(PADAPTER a)
 	}
 	a->numTCBsFree = a->numTcbs;
 
-	a->txHandle = a->vif.attach(a->bus_handle, a, VBUS_ATTACH_SEND, 
+	a->txHandle = a->vif.create(a->bus_handle, 512, a, VBUS_IOQ_SEND, 
 			VenetTxHandler);
 	if (!a->txHandle) {
 		VenetFreeTx(a);
@@ -328,7 +328,7 @@ static VOID
 VenetFreeRx(PADAPTER a)
 {
 	UNREFERENCED_PARAMETER(a);
-	a->vif.detach(a->rxHandle);
+	a->vif.destroy(a->rxHandle);
 	a->rxHandle = NULL;
 }
 
@@ -349,7 +349,7 @@ VenetSetupRx(PADAPTER a)
 	p.PoolTag = VNET;
 	//a->recv_pool = NdisAllocateNetBufferListPool(a->adapterHandle, &p); 
 
-	a->rxHandle = a->vif.attach(a->bus_handle, a, VBUS_ATTACH_RECV, 
+	a->rxHandle = a->vif.create(a->bus_handle, 512, a, VBUS_IOQ_RECV, 
 			VenetRxHandler);
 	if (!a->rxHandle) {
 		VenetFreeRx(a);
@@ -426,6 +426,11 @@ done:
 	return rc;
 }
 
+static void
+VenetEventHandler(VOID *data)
+{
+}
+
 NDIS_STATUS 
 VenetGetInterface(NDIS_HANDLE handle, PADAPTER a)
 {
@@ -442,16 +447,16 @@ VenetGetInterface(NDIS_HANDLE handle, PADAPTER a)
 		return NDIS_STATUS_FAILURE;
 
 
-	nrc = WdfIoTargetQueryForInterface( WdfDeviceGetIoTarget(a->wdf_device), 
-				&VBUS_INTERFACE_GUID, (PINTERFACE) &a->vif, 
-				VBUS_IF_SIZE, VBUS_IF_VERSION, NULL);
+	nrc = WdfIoTargetQueryForInterface(WdfDeviceGetIoTarget(a->wdf_device),
+			&VBUS_INTERFACE_GUID, (PINTERFACE) &a->vif, 
+			VBUS_IF_SIZE, VBUS_IF_VERSION, NULL);
 	if (!NT_SUCCESS(nrc))
 		return NDIS_STATUS_FAILURE;
 
-	rc = a->vif.open(a->pdo, &a->bus_handle);
+	rc = a->vif.open(a->pdo, VENET_VERSION, &a->bus_handle, 
+			VenetEventHandler);
 	if (rc) 
 		return NDIS_STATUS_FAILURE;
-
 
 	return NDIS_STATUS_SUCCESS;
 }

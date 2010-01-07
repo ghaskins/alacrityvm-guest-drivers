@@ -33,21 +33,17 @@
 #include "vbus_if.h"
 #include "vbus_pci.h"
 #include "ioq.h"
-#include "venet.h"
 
 /* Memory allocation stuff */
 #define VTAG	'vv'
-
-typedef VOID (*NotifyHandler)(PVOID data);
 
 /* Context for an IO handle */
 typedef struct _IO 
 {
 	struct ioq	ioq;
 	int		type;
-	UINT64		bh;	/* bus_handle */
 	void		*context;
-	Notifier	notify_func;
+	IoqCB		notify_func;
 } IOH, *PIOH;
 
 /*
@@ -59,6 +55,7 @@ typedef struct _PDO_DEVICE_DATA
 	UINT64		handle;
 	UINT64 		id;
 	char		type[VBUS_MAX_DEVTYPE_LEN];
+	UINT64		bh;	/* bus_handle */
 	WDFINTERRUPT	interrupt;
 	struct ioq	send;
 } PDO_DEVICE_DATA, *PPDO_DEVICE_DATA;
@@ -120,17 +117,17 @@ extern NTSTATUS VbusPciPrepareHardware(WDFDEVICE dev, WDFCMRESLIST rt);
 extern NTSTATUS VbusPciReleaseHardware(void);
 extern NTSTATUS VbusPciCreateResources(WDFDEVICE dev);
 
-extern int VbusPciOpen(UINT64 id, UINT64 *bh);
-extern void VbusPciClose(UINT64 bh);
 
 extern int VbusBridgeCall(ULONG nr, PVOID data, ULONG len);
 extern int VbusBusCall(ULONG nr, PVOID data, ULONG len);
 
-extern int VbusInterfaceQueryMac(PUCHAR buffer);
-extern int VbusInterfaceOpen(PDEVICE_OBJECT pdo, UINT64 *bh);
+extern int VbusInterfaceOpen(PDEVICE_OBJECT pdo, int ver, UINT64 *bh, IoqCB func);
 extern void VbusInterfaceClose(UINT64 bh);
-extern void *VbusInterfaceAttach(UINT64 bh, void *data, int type, Notifier func);
-extern void VbusInterfaceDetach(void *handle);
+extern int VbusInterfaceCall(UINT64 bh, int type, void *data, int len, int flags);
+extern void *VbusInterfaceCreate(UINT64 bh, int qlen, void *data, int type, IoqCB func);
+extern void VbusInterfaceDestroy(void *handle);
+extern int VbusInterfaceIoqctl(void *handle, int op);
+extern int VbusInterfaceSeek(void *handle, int offset);
 extern int VbusInterfaceSend(void *handle, void *data, int len);
 extern int VbusInterfaceRecv(void *handle);
 
