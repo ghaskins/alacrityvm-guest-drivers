@@ -54,6 +54,9 @@ struct _signal {
 static struct shm_signal_ops _signal_ops;
 static struct shm_signal_ops eventq_signal_ops;
 
+/* Storage for the eventq notifier */
+static struct ioq_notifier eventq_notifier;
+
 /* ISR protos */
 EVT_WDF_INTERRUPT_DPC		_signal_dpc;
 EVT_WDF_INTERRUPT_ISR		_signal_isr;
@@ -311,7 +314,6 @@ event_shmclose(struct vbus_pci_handle_event *event)
  * -------------------
  */
 
-static struct ioq_notifier eventq_notifier;
 
 
 /* Invoked whenever the hypervisor ioq_signal()s our eventq */
@@ -377,7 +379,6 @@ eventq_wakeup(struct ioq_notifier *notifier)
 	ioq_signal(&vbus_pci.eventq, 0);
 }
 
-static struct ioq_notifier eventq_notifier;
 
 
 /*
