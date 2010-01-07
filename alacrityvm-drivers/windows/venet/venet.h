@@ -187,7 +187,6 @@ extern NDIS_OID VenetSupportedOids[];
 typedef struct _TCB {
 	LIST_ENTRY		list;
 	BOOLEAN			isCancelled;
-	PVOID			sgListBuffer;
 	PNET_BUFFER_LIST	nbl;
 	PVOID			adapter;
 	NDIS_STATUS		status;
@@ -258,7 +257,6 @@ typedef struct _ADAPTER {
 	QUEUE_HEADER		sendQueue;
 	NDIS_SPIN_LOCK		sendLock;
 	NDIS_EVENT		sendEvent;
-	ULONG			sgSize;		/* SG List buffer size */
 	PNET_BUFFER_LIST	sendingNBL;
 	NDIS_HANDLE		dmaHandle;
 	LIST_ENTRY		tcbFree;
@@ -315,7 +313,6 @@ MINIPORT_RESET				VenetReset;
 MINIPORT_DEVICE_PNP_EVENT_NOTIFY	VenetDevicePnpEvent;
 MINIPORT_SHUTDOWN			VenetShutdown;
 MINIPORT_CANCEL_OID_REQUEST		VenetCancelOidRequest;
-MINIPORT_PROCESS_SG_LIST		VenetProcessSGList;
 
 extern PVOID VenetAlloc(ULONG size);
 extern VOID  VenetFree(PVOID p, ULONG size);

@@ -166,28 +166,6 @@ VenetGetMacAddress(PADAPTER a)
 }
 
 NDIS_STATUS 
-VenetRegisterSG(PADAPTER a) 
-{
-	NDIS_SG_DMA_DESCRIPTION d;
-	NDIS_STATUS rc;
-
-	NdisZeroMemory(&d, sizeof(d));
-
-	d.Header.Type = NDIS_OBJECT_TYPE_SG_DMA_DESCRIPTION;
-	d.Header.Revision = NDIS_SG_DMA_DESCRIPTION_REVISION_1;
-	d.Header.Size = NDIS_SIZEOF_SG_DMA_DESCRIPTION_REVISION_1;
-	d.Flags = NDIS_SG_DMA_64_BIT_ADDRESS;
-	d.MaximumPhysicalMapping = ETH_MAX_PACKET_SIZE;
-	d.ProcessSGListHandler = VenetProcessSGList;
-	d.SharedMemAllocateCompleteHandler = NULL;
-	rc = NdisMRegisterScatterGatherDma(a->adapterHandle, &d, &a->dmaHandle);
-
-	a->sgSize = d.ScatterGatherListSize;
-
-	return rc;
-}
-
-NDIS_STATUS 
 VenetSetRegistrationAttributes(NDIS_HANDLE handle, PADAPTER a) 
 {
 	NDIS_MINIPORT_ADAPTER_REGISTRATION_ATTRIBUTES	attr;
@@ -303,7 +281,6 @@ VenetFreeTx(PADAPTER a)
 	while(!IsListEmpty(&a->tcbFree)) {
 		e = RemoveHeadList(&a->tcbFree);
 		t = CONTAINING_RECORD(e, TCB, list);
-		VenetFree(t->sgListBuffer, a->sgSize);
 		VenetFree(t, sizeof(ADAPTER));
 	}
 
@@ -311,7 +288,6 @@ VenetFreeTx(PADAPTER a)
 	while(!IsListEmpty(&a->tcbBusy)) {
 		e = RemoveHeadList(&a->tcbBusy);
 		t = CONTAINING_RECORD(e, TCB, list);
-		VenetFree(t->sgListBuffer, a->sgSize);
 		VenetFree(t, sizeof(ADAPTER));
 	}
 
@@ -335,11 +311,6 @@ VenetSetupTx(PADAPTER a)
 		t = (PTCB) VenetAlloc(sizeof(TCB));
 		if (!t) 
 			return STATUS_NO_MEMORY;
-		t->sgListBuffer = VenetAlloc(a->sgSize);
-		if (!t->sgListBuffer) {
-			VenetFree(t, sizeof(TCB));
-			return STATUS_NO_MEMORY;
-		}
 		t->adapter = (PVOID) a;
 		InsertHeadList(&a->tcbFree, &t->list);
 	}
@@ -505,11 +476,6 @@ VenetInitialize(NDIS_HANDLE handle, NDIS_HANDLE driver_context,
 
 vlog("interface");
 	rc = VenetGetInterface(handle, a);
-	if (rc != NDIS_STATUS_SUCCESS) 
-		goto err;
-
-vlog("SG dma");
-	rc = VenetRegisterSG(a);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto err;
 
