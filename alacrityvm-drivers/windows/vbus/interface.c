@@ -54,10 +54,9 @@ VbusInterfaceOpen(PDEVICE_OBJECT pdo, UINT64 *bh)
 	/* Get the PDO context */
 	dev = WdfWdmDeviceGetWdfDeviceHandle(pdo);
 	pd = PdoGetData(dev);
-	vlog("**** interface open called ****");
-
 	rc = VbusPciOpen(pd->id, bh);
 
+	vlog("**** interface open called rc = %d****", rc);
 	return rc;
 }
 

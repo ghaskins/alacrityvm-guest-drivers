@@ -795,7 +795,7 @@ VbusPciOpen(UINT64 id, UINT64 *bh)
 	int 				rc;
 
 	params.devid   = (UINT32) id;
-	params.version = VBUS_PCI_HC_VERSION;
+	params.version = VENET_VERSION;
 	params.handle = 0;
 
 	rc = vbus_pci_buscall(VBUS_PCI_HC_DEVOPEN, &params, sizeof(params));

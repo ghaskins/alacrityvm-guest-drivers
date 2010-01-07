@@ -503,34 +503,42 @@ VenetInitialize(NDIS_HANDLE handle, NDIS_HANDLE driver_context,
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto err;
 
+vlog("interface");
 	rc = VenetGetInterface(handle, a);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto err;
 
+vlog("SG dma");
 	rc = VenetRegisterSG(a);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto err;
 
+vlog("rx");
 	rc = VenetSetupRx(a);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto err;
 
+vlog("tx");
 	rc = VenetSetupTx(a);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto err;
 
+vlog("mac");
 	rc = VenetGetMacAddress(a);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto err;
 
+vlog("registry");
 	rc = VenetRegistryParams(a);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto err;
 
+vlog("reg attr");
 	rc = VenetSetRegistrationAttributes(handle, a);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto err;
 
+vlog("general attr");
 	rc = VenetSetGeneralAttributes(handle, a);
 	if (rc != NDIS_STATUS_SUCCESS) 
 		goto err;
