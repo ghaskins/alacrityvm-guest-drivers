@@ -74,13 +74,20 @@ VbusInterfaceClose(UINT64 bh)
  * VbusInterfaceAttach - attach a tx/rx ioq
  */
 void *
-VbusInterfaceAttach(UINT64 bh, int type, Notifier func)
+VbusInterfaceAttach(UINT64 bh, void *data, int type, Notifier func)
 {
-	UNREFERENCED_PARAMETER(bh);
+	PIOH		ioh;
 	UNREFERENCED_PARAMETER(type);
-	UNREFERENCED_PARAMETER(func);
+
+	ioh = VbusAlloc(sizeof(IOH));
+	if (ioh) {
+		ioh->bh = bh;
+		ioh->type = type;
+		ioh->notify_func = func;
+		ioh->context = data;
+	}
 	vlog("**** interface attach called ****");
-	return NULL;
+	return ioh;
 }
 
 /*
@@ -89,7 +96,10 @@ VbusInterfaceAttach(UINT64 bh, int type, Notifier func)
 void
 VbusInterfaceDetach(void *handle)
 {
-	UNREFERENCED_PARAMETER(handle);
+	if (handle) {
+		VbusFree(handle);
+	}
+
 	vlog("**** interface detach called ****");
 	return ;
 }

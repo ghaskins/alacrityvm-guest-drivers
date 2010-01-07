@@ -291,10 +291,8 @@ VenetFreeTx(PADAPTER a)
 		VenetFree(t, sizeof(ADAPTER));
 	}
 
-	if (a->tx_handle) 
-		a->vif.detach(a->tx_handle);
-
-	a->tx_handle = NULL;
+	a->vif.detach(a->txHandle);
+	a->txHandle = NULL;
 }
 
 static NDIS_STATUS
@@ -316,8 +314,9 @@ VenetSetupTx(PADAPTER a)
 	}
 	a->numTCBsFree = a->numTcbs;
 
-	a->tx_handle = a->vif.attach(a->bus_handle, VBUS_ATTACH_SEND, VenetTxHandler);
-	if (!a->tx_handle) {
+	a->txHandle = a->vif.attach(a->bus_handle, a, VBUS_ATTACH_SEND, 
+			VenetTxHandler);
+	if (!a->txHandle) {
 		VenetFreeTx(a);
 		return NDIS_STATUS_FAILURE;
 	}
@@ -325,6 +324,13 @@ VenetSetupTx(PADAPTER a)
 	return NDIS_STATUS_SUCCESS;
 }
 
+static VOID
+VenetFreeRx(PADAPTER a)
+{
+	UNREFERENCED_PARAMETER(a);
+	a->vif.detach(a->rxHandle);
+	a->rxHandle = NULL;
+}
 
 static NDIS_STATUS 
 VenetSetupRx(PADAPTER a)
@@ -343,13 +349,14 @@ VenetSetupRx(PADAPTER a)
 	p.PoolTag = VNET;
 	//a->recv_pool = NdisAllocateNetBufferListPool(a->adapterHandle, &p); 
 
-	return rc;
-}
+	a->rxHandle = a->vif.attach(a->bus_handle, a, VBUS_ATTACH_RECV, 
+			VenetRxHandler);
+	if (!a->rxHandle) {
+		VenetFreeRx(a);
+		return NDIS_STATUS_FAILURE;
+	}
 
-static VOID
-VenetFreeRx(PADAPTER a)
-{
-	UNREFERENCED_PARAMETER(a);
+	return rc;
 }
 
 static VOID 

@@ -40,6 +40,16 @@
 
 typedef VOID (*NotifyHandler)(PVOID data);
 
+/* Context for an IO handle */
+typedef struct _IO 
+{
+	struct ioq	ioq;
+	int		type;
+	UINT64		bh;	/* bus_handle */
+	void		*context;
+	Notifier	notify_func;
+} IOH, *PIOH;
+
 /*
  * Context for a PDO.  
  */
@@ -51,11 +61,6 @@ typedef struct _PDO_DEVICE_DATA
 	char		type[VBUS_MAX_DEVTYPE_LEN];
 	WDFINTERRUPT	interrupt;
 	struct ioq	send;
-	struct ioq	recv;
-	NotifyHandler	send_notifier;
-	NotifyHandler	recv_notifier;
-
-
 } PDO_DEVICE_DATA, *PPDO_DEVICE_DATA;
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(PDO_DEVICE_DATA, PdoGetData)
 
@@ -121,7 +126,7 @@ extern void VbusPciClose(UINT64 bh);
 extern int VbusInterfaceQueryMac(PUCHAR buffer);
 extern int VbusInterfaceOpen(PDEVICE_OBJECT pdo, UINT64 *bh);
 extern void VbusInterfaceClose(UINT64 bh);
-extern void *VbusInterfaceAttach(UINT64 bh, int type, Notifier func);
+extern void *VbusInterfaceAttach(UINT64 bh, void *data, int type, Notifier func);
 extern void VbusInterfaceDetach(void *handle);
 extern int VbusInterfaceSend(void *handle, void *data, int len);
 extern int VbusInterfaceRecv(void *handle);

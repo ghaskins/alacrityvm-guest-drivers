@@ -244,14 +244,15 @@ typedef struct _ADAPTER {
 	ULONG64		rxCount;
 
 	/* Receive handling */
-	NDIS_HANDLE	recv_pool;
-	LIST_ENTRY	recvToProcess;
-	LIST_ENTRY	recvFreeList;
-	NDIS_SPIN_LOCK	recvLock;
-	ULONG		nBusyRecv;
+	NDIS_HANDLE		recv_pool;
+	LIST_ENTRY		recvToProcess;
+	LIST_ENTRY		recvFreeList;
+	NDIS_SPIN_LOCK		recvLock;
+	ULONG			nBusyRecv;
+	PVOID			rxHandle;
 
 	/* Send Handling */
-	PVOID			tx_handle;
+	PVOID			txHandle;
 	ULONG			numTcbs;
 	ULONG			numTCBsFree;
 	QUEUE_HEADER		sendQueue;
@@ -324,7 +325,9 @@ extern VOID VenetSetSyncFlag(PADAPTER a, int flag);
 extern VOID VenetFreeQueuedSend(PADAPTER a, NDIS_STATUS status);
 extern VOID VenetReceivePackets(PADAPTER a);
 extern VOID VenetFreeQueuedPackets(PADAPTER a);
+
 extern VOID VenetTxHandler(PVOID data);
+extern VOID VenetRxHandler(PVOID data);
 
 
 #endif /* _VENET_H_ */

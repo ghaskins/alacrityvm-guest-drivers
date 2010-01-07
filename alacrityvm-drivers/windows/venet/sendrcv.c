@@ -420,6 +420,12 @@ VenetTxHandler(PVOID data)
 	UNREFERENCED_PARAMETER(data);
 }
 
+VOID 
+VenetRxHandler(PVOID data)
+{
+	UNREFERENCED_PARAMETER(data);
+}
+
 VOID
 VenetReturnNetBufs(NDIS_HANDLE adapter, PNET_BUFFER_LIST list, ULONG flags)
 {

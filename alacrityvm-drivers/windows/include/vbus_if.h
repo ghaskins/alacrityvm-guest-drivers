@@ -44,7 +44,7 @@ typedef struct _VBUS_IF {
     INTERFACE		inf;
     int			(*open)(PDEVICE_OBJECT pdo, UINT64 *bh);
     void		(*close)(UINT64 bh);
-    void		*(*attach)(UINT64 bh, int type, Notifier func);
+    void		*(*attach)(UINT64 bh, void *data, int type, Notifier func);
     void		(*detach)(void *handle);
     int			(*inject)(void *handle);
     int			(*send)(void *handle, void *data, int len);
