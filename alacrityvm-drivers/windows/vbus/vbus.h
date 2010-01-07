@@ -33,9 +33,12 @@
 #include "vbus_if.h"
 #include "vbus_pci.h"
 #include "ioq.h"
+#include "venet.h"
 
 /* Memory allocation stuff */
 #define VTAG	'vv'
+
+typedef VOID (*NotifyHandler)(PVOID data);
 
 /*
  * Context for a PDO.  
@@ -47,6 +50,11 @@ typedef struct _PDO_DEVICE_DATA
 	UINT64 		id;
 	char		type[VBUS_MAX_DEVTYPE_LEN];
 	WDFINTERRUPT	interrupt;
+	struct ioq	send;
+	struct ioq	recv;
+	NotifyHandler	send_notifier;
+	NotifyHandler	recv_notifier;
+
 
 } PDO_DEVICE_DATA, *PPDO_DEVICE_DATA;
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(PDO_DEVICE_DATA, PdoGetData)
