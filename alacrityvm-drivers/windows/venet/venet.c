@@ -345,7 +345,7 @@ VenetSetupTx(PADAPTER a)
 	}
 	a->numTCBsFree = a->numTcbs;
 
-	a->tx_handle = a->vif.open(VenetTxHandler);
+	a->tx_handle = a->vif.attach(a->pdo, VBUS_ATTACH_SEND, VenetTxHandler);
 	if (!a->tx_handle) {
 		VenetFreeTx(a);
 		return NDIS_STATUS_FAILURE;
@@ -457,7 +457,7 @@ NDIS_STATUS
 VenetGetInterface(NDIS_HANDLE handle, PADAPTER a)
 {
 	WDF_OBJECT_ATTRIBUTES	attr;
-	NDIS_STATUS		rc = NDIS_STATUS_RESOURCES;
+	int			rc;
 	NTSTATUS		nrc;
 
 	/* Get my interface from Vbus... */
@@ -465,14 +465,22 @@ VenetGetInterface(NDIS_HANDLE handle, PADAPTER a)
 	WDF_OBJECT_ATTRIBUTES_INIT(&attr);
 	nrc = WdfDeviceMiniportCreate(WdfGetDriver(), &attr, a->fdo, 
 			a->next, a->pdo, &a->wdf_device);
-	if (NT_SUCCESS(nrc)) {
-		rc = WdfIoTargetQueryForInterface(
-				WdfDeviceGetIoTarget(a->wdf_device), 
+	if (!NT_SUCCESS(nrc)) 
+		return NDIS_STATUS_FAILURE;
+
+
+	nrc = WdfIoTargetQueryForInterface( WdfDeviceGetIoTarget(a->wdf_device), 
 				&VBUS_INTERFACE_GUID, (PINTERFACE) &a->vif, 
 				VBUS_IF_SIZE, VBUS_IF_VERSION, NULL);
-	}
+	if (!NT_SUCCESS(nrc))
+		return NDIS_STATUS_FAILURE;
 
-	return rc;
+	rc = a->vif.open(a->pdo, &a->bus_handle);
+	if (rc) 
+		return NDIS_STATUS_FAILURE;
+
+
+	return NDIS_STATUS_SUCCESS;
 }
 
 NDIS_STATUS 
@@ -570,6 +578,9 @@ VenetHalt(NDIS_HANDLE handle, NDIS_HALT_ACTION action)
 
 	VenetFreeRx(a);
 	VenetFreeTx(a);
+
+	if (a->vif.close) 
+		a->vif.close(a->bus_handle);
 
 	NdisFreeSpinLock(&a->sendLock);
 	NdisFreeSpinLock(&a->recvLock);

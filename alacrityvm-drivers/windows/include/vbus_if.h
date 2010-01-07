@@ -29,25 +29,27 @@ DEFINE_GUID(VBUS_INTERFACE_GUID,
 #ifndef _VBUS_IF_H_
 #define _VBUS_IF_H_
 
-typedef NTSTATUS (*vbus_if_querymac)(PVOID buffer);
-typedef NTSTATUS (*vbus_if_open)(PDEVICE_OBJECT pdo);
-typedef NTSTATUS (*vbus_if_read)(VOID);
-typedef NTSTATUS (*vbus_if_write)(VOID);
-typedef NTSTATUS (*vbus_if_close)(PDEVICE_OBJECT pdo);
-
 #define VBUS_IF_VERSION		1
 #define VBUS_IF_SIZE		(sizeof(VBUS_IF))
+
+typedef void (*Notifier)(void *data);
+
+#define VBUS_ATTACH_SEND		0x02
+#define VBUS_ATTACH_RECV		0x04
 
 /*
  * Vbus Child device interface.  
  */
 typedef struct _VBUS_IF {
     INTERFACE		inf;
-    vbus_if_open	open;
-    vbus_if_close	close;
-    vbus_if_read	read;
-    vbus_if_write	write;
-    vbus_if_querymac	querymac;
+    int			(*open)(PDEVICE_OBJECT pdo, UINT64 *bh);
+    void		(*close)(UINT64 bh);
+    void		*(*attach)(UINT64 bh, int type, Notifier func);
+    void		(*detach)(void *handle);
+    int			(*inject)(void *handle);
+    int			(*send)(void *handle, void *data, int len);
+    int			(*recv)(void *handle);
+    int			(*querymac)(void *buffer);
 } VBUS_IF, *VBUS_PIF;
 
 

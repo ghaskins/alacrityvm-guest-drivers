@@ -110,11 +110,14 @@ extern NTSTATUS VbusPciCreateResources(WDFDEVICE dev);
 extern NTSTATUS VbusProxyOpen(PDEVICE_OBJECT pdo);
 extern NTSTATUS VbusProxyClose(PDEVICE_OBJECT pdo);
 
-extern NTSTATUS VbusInterfaceQueryMac(PUCHAR buffer);
-extern NTSTATUS VbusInterfaceOpen(PDEVICE_OBJECT pdo);
-extern NTSTATUS VbusInterfaceClose(PDEVICE_OBJECT pdo);
-extern NTSTATUS VbusInterfaceRead(VOID);
-extern NTSTATUS VbusInterfaceWrite(VOID);
+extern int VbusInterfaceQueryMac(PUCHAR buffer);
+extern int VbusInterfaceOpen(PDEVICE_OBJECT pdo, UINT64 *bh);
+extern void VbusInterfaceClose(UINT64 bh);
+extern void *VbusInterfaceAttach(UINT64 bh, int type, Notifier func);
+extern void VbusInterfaceDetach(void *handle);
+extern int VbusInterfaceSend(void *handle, void *data, int len);
+extern int VbusInterfaceRecv(void *handle);
+
 extern PVOID VbusAlloc(LONG len);
 extern VOID VbusFree(PVOID p);
 

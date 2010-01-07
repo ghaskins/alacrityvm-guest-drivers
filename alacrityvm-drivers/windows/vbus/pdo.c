@@ -167,8 +167,10 @@ VbusCreatePdo(WDFDEVICE dev, PWDFDEVICE_INIT init, PPDO_ID_DESC d)
 	vif.inf.InterfaceDereference = WdfDeviceInterfaceDereferenceNoOp;
 	vif.open	= VbusInterfaceOpen;
 	vif.close	= VbusInterfaceClose;
-	vif.read	= VbusInterfaceRead;
-	vif.write	= VbusInterfaceWrite;
+	vif.attach	= VbusInterfaceAttach;
+	vif.detach	= VbusInterfaceDetach;
+	vif.send	= VbusInterfaceSend;
+	vif.recv	= VbusInterfaceRecv;
 	vif.querymac	= VbusInterfaceQueryMac;
 	WDF_QUERY_INTERFACE_CONFIG_INIT(&conf, (PINTERFACE) &vif, 
 			&VBUS_INTERFACE_GUID, NULL);

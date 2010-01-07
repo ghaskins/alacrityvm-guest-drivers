@@ -27,7 +27,7 @@
 /*
  * vbus_pdo_open - Child device interface for open
  */
-NTSTATUS
+int
 VbusInterfaceQueryMac(PUCHAR buffer)
 {
 
@@ -39,41 +39,74 @@ VbusInterfaceQueryMac(PUCHAR buffer)
 	buffer[4] = 0x11;
 	buffer[5] = 0x01;
 
-	return STATUS_SUCCESS;
+	return 0;
 }
 /*
- * vbus_pdo_open - Child device interface for open
+ * VbusInterfaceOpen - Child device interface for open
  */
-NTSTATUS
-VbusInterfaceOpen(PDEVICE_OBJECT pdo)
+int
+VbusInterfaceOpen(PDEVICE_OBJECT pdo, UINT64 *bh)
 {
-	return (VbusProxyOpen(pdo));
-}
-
-/*
- * vbus_pdo_close - Child device interface for close
- */
-NTSTATUS
-VbusInterfaceClose(PDEVICE_OBJECT pdo)
-{
-	return (VbusProxyClose(pdo));
+	UNREFERENCED_PARAMETER(pdo);
+	UNREFERENCED_PARAMETER(bh);
+	vlog("**** interface open called ****");
+	return 0;
 }
 
 /*
- * vbus_pdo_read - Child device interface for reading a packet.
+ * VbusInterfaceClose - Child device interface for close
  */
-NTSTATUS
-VbusInterfaceRead(void)
+void
+VbusInterfaceClose(UINT64 bh)
 {
-	return STATUS_SUCCESS;
+	UNREFERENCED_PARAMETER(bh);
+	vlog("**** interface close called ****");
+	return;
 }
 
 /*
- * vbus_pdo_write - Child device interface for reading a packet.
+ * VbusInterfaceAttach - attach a tx/rx ioq
  */
-NTSTATUS
-VbusInterfaceWrite(void)
+void *
+VbusInterfaceAttach(UINT64 bh, int type, Notifier func)
 {
-	return STATUS_SUCCESS;
+	UNREFERENCED_PARAMETER(bh);
+	UNREFERENCED_PARAMETER(type);
+	UNREFERENCED_PARAMETER(func);
+	vlog("**** interface attach called ****");
+	return NULL;
+}
+
+/*
+ * VbusInterfaceDetach - detach a tx/rx ioq
+ */
+void
+VbusInterfaceDetach(void *handle)
+{
+	UNREFERENCED_PARAMETER(handle);
+	vlog("**** interface detach called ****");
+	return ;
+}
+
+/*
+ * VbusInterfaceSend - Child device interface for reading a packet.
+ */
+int
+VbusInterfaceSend(void *handle, void *data, int len)
+{
+	UNREFERENCED_PARAMETER(handle);
+	UNREFERENCED_PARAMETER(data);
+	UNREFERENCED_PARAMETER(len);
+	return 0;
+}
+
+/*
+ * VbusInterfaceRecv - Child device interface for reading a packet.
+ */
+int
+VbusInterfaceRecv(void *handle)
+{
+	UNREFERENCED_PARAMETER(handle);
+	return 0;
 }
 

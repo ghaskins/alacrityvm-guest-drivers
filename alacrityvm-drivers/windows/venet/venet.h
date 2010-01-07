@@ -210,6 +210,8 @@ typedef struct _ADAPTER {
 	VBUS_IF		vif;
 	NDIS_SPIN_LOCK	lock;
 
+	UINT64		bus_handle;
+
 	/* Control device */
 	NDIS_HANDLE	control_handle;
 	PDEVICE_OBJECT	control_object; /* Device for IOCTLs. */
