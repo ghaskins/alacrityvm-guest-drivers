@@ -123,6 +123,9 @@ extern NTSTATUS VbusPciCreateResources(WDFDEVICE dev);
 extern int VbusPciOpen(UINT64 id, UINT64 *bh);
 extern void VbusPciClose(UINT64 bh);
 
+extern int VbusBridgeCall(ULONG nr, PVOID data, ULONG len);
+extern int VbusBusCall(ULONG nr, PVOID data, ULONG len);
+
 extern int VbusInterfaceQueryMac(PUCHAR buffer);
 extern int VbusInterfaceOpen(PDEVICE_OBJECT pdo, UINT64 *bh);
 extern void VbusInterfaceClose(UINT64 bh);

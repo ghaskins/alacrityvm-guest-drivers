@@ -783,9 +783,15 @@ vlog("VbusPciD0Exit: next_state = %d", next_state);
 }
 
 int
-VbusBridgeCall(unsigned long nr, void *data, unsigned long len)
+VbusBridgeCall(ULONG nr, PVOID data, ULONG len)
 {
 	return (vbus_pci_bridgecall(nr, data, len));
+}
+
+int
+VbusBusCall(ULONG nr, PVOID data, ULONG len)
+{
+	return (vbus_pci_buscall(nr, data, len));
 }
 
 int
