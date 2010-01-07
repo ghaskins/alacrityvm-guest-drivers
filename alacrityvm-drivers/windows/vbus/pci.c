@@ -238,6 +238,7 @@ event_devadd(struct vbus_pci_add_event *event)
 	PDO_ID_DESC	d;
 	NTSTATUS	rc;
 
+	vlog("eventq_devadd");
 	list = WdfFdoGetDefaultChildList(vbus_pci.bus);
 
 	WDF_CHILD_IDENTIFICATION_DESCRIPTION_HEADER_INIT(&d.header, sizeof(d));
@@ -263,6 +264,7 @@ event_devdrop(struct vbus_pci_handle_event *event)
 	/* 
 	 * Search the child list for a child with this handle. 
 	 */
+	vlog("eventq_devdrop");
 	list = WdfFdoGetDefaultChildList(vbus_pci.bus);
 	WDF_CHILD_LIST_ITERATOR_INIT(&it, WdfRetrievePresentChildren);
 
@@ -290,6 +292,7 @@ event_shmsignal(struct vbus_pci_handle_event *event)
 {
 	struct _signal *s = (struct _signal *)(unsigned long)event->handle;
 
+	vlog("eventq_shmsignal");
 	_ShmSignalWakeup(&s->signal);
 }
 
@@ -298,6 +301,7 @@ event_shmclose(struct vbus_pci_handle_event *event)
 {
 	struct _signal *s= (struct _signal *)(unsigned long)event->handle;
 
+	vlog("eventq_shmclose");
 	_signal_put(s);
 }
 
@@ -316,6 +320,8 @@ eventq_wakeup(struct ioq_notifier *notifier)
 {
 	struct ioq_iterator iter;
 	int ret;
+
+	vlog("eventq_wakeup");
 
 	/* We want to iterate on the head of the in-use index */
 	ret = ioq_iter_init(&vbus_pci.eventq, &iter, ioq_idxtype_inuse, 0);
@@ -554,6 +560,7 @@ eventq_intr_disable(WDFINTERRUPT in, WDFDEVICE dev)
 static VOID 
 eventq_intr_dpc(WDFINTERRUPT in, WDFOBJECT dev)
 {
+	vlog("eventq dpc");
 	_ShmSignalWakeup(vbus_pci.eventq.signal);
 	ShmSignalEnable(vbus_pci.eventq.signal, 0);
 }
@@ -561,10 +568,11 @@ eventq_intr_dpc(WDFINTERRUPT in, WDFOBJECT dev)
 static BOOLEAN 
 eventq_intr_isr(WDFINTERRUPT in, ULONG mid)
 {
+	vlog("*** eventq INTERUPPT ***");
+
 	/* If we are currently disabled, discard this interrupt. */
 	if (!ShmSignalTestEnabled(vbus_pci.eventq.signal))
 		return FALSE;
-	vlog("*** eventq INTERUPPT ***");
 
 	/* disable, re-enabled in the DPC... */
 	ShmSignalDisable(vbus_pci.eventq.signal, 0);
