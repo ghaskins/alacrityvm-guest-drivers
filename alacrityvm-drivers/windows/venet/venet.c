@@ -316,7 +316,7 @@ VenetFreeTx(PADAPTER a)
 	}
 
 	if (a->tx_handle) 
-		a->vif.close(a->tx_handle);
+		a->vif.detach(a->tx_handle);
 
 	a->tx_handle = NULL;
 }
@@ -345,7 +345,7 @@ VenetSetupTx(PADAPTER a)
 	}
 	a->numTCBsFree = a->numTcbs;
 
-	a->tx_handle = a->vif.attach(a->pdo, VBUS_ATTACH_SEND, VenetTxHandler);
+	a->tx_handle = a->vif.attach(a->bus_handle, VBUS_ATTACH_SEND, VenetTxHandler);
 	if (!a->tx_handle) {
 		VenetFreeTx(a);
 		return NDIS_STATUS_FAILURE;

@@ -107,8 +107,8 @@ extern NTSTATUS VbusPciPrepareHardware(WDFDEVICE dev, WDFCMRESLIST rt);
 extern NTSTATUS VbusPciReleaseHardware(void);
 extern NTSTATUS VbusPciCreateResources(WDFDEVICE dev);
 
-extern NTSTATUS VbusProxyOpen(PDEVICE_OBJECT pdo);
-extern NTSTATUS VbusProxyClose(PDEVICE_OBJECT pdo);
+extern int VbusPciOpen(UINT64 id, UINT64 *bh);
+extern void VbusPciClose(UINT64 bh);
 
 extern int VbusInterfaceQueryMac(PUCHAR buffer);
 extern int VbusInterfaceOpen(PDEVICE_OBJECT pdo, UINT64 *bh);

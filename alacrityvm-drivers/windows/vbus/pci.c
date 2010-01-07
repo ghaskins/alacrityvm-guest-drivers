@@ -752,70 +752,37 @@ VbusBridgeCall(unsigned long nr, void *data, unsigned long len)
 	return (vbus_pci_bridgecall(nr, data, len));
 }
 
-NTSTATUS
-VbusProxyOpen(PDEVICE_OBJECT pdo) 
+int
+VbusPciOpen(UINT64 id, UINT64 *bh)
 {
 	struct vbus_pci_deviceopen 	params;
-	PPDO_DEVICE_DATA                pd;
-	WDFDEVICE		 	dev;
-	int 				ret;
+	int 				rc;
 
-	/* Get the PDO context */
-	dev = WdfWdmDeviceGetWdfDeviceHandle(pdo);
-	pd = PdoGetData(dev);
-
-	params.devid   = (UINT32) pd->id;
+	params.devid   = (UINT32) id;
 	params.version = VBUS_PCI_ABI_VERSION;
 	params.handle = 0;
 
-	ret = vbus_pci_buscall(VBUS_PCI_HC_DEVOPEN, &params, sizeof(params));
-	if (ret < 0)
-		return STATUS_NO_SUCH_DEVICE;
+	rc = vbus_pci_buscall(VBUS_PCI_HC_DEVOPEN, &params, sizeof(params));
+	if (rc < 0)
+		return -1;
 
-	pd->handle = params.handle;
+	*bh = params.handle;
 
-	return STATUS_SUCCESS;
+	return 0;
 }
 
-NTSTATUS
-VbusProxyClose(PDEVICE_OBJECT pdo)
+void
+VbusPciClose(UINT64 bh)
 {
-	int ret;
-	PPDO_DEVICE_DATA                pd;
-	WDFDEVICE		 	dev;
-	struct _signal 			*_signal;
-
-	/* Get the PDO context */
-	dev = WdfWdmDeviceGetWdfDeviceHandle(pdo);
-	pd = PdoGetData(dev);
-
-	if (!pd->handle)
-		return STATUS_INVALID_HANDLE;
-
-	/* 
-	 * Remove the _signal's from the list.  These will be reclaimed 
-	 * when the host sends a SHMCLOSE. 
-	 */
-	WdfSpinLockAcquire(vbus_pci.lock);
-	while (!IsListEmpty(&pd->shms)) {
-		_signal = CONTAINING_RECORD(&pd->shms, struct _signal, list);
-		RemoveHeadList(&pd->shms);
-	}
-	WdfSpinLockRelease(vbus_pci.lock);
-
 	/*
 	 * The DEVICECLOSE will implicitly close all of the shm on the
 	 * host-side, so there is no need to do an explicit per-shm
 	 * hypercall
 	 */
-	ret = vbus_pci_buscall(VBUS_PCI_HC_DEVCLOSE, 
-			&pd->handle, sizeof(pd->handle));
-	if (ret < 0)
-		return STATUS_INVALID_DEVICE_REQUEST;
-
-	pd->handle = 0;
-
-	return STATUS_SUCCESS;
+	if (bh) {
+		vbus_pci_buscall(VBUS_PCI_HC_DEVCLOSE, 
+			&bh, sizeof(bh));
+	}
 }
 
 NTSTATUS

@@ -47,10 +47,18 @@ VbusInterfaceQueryMac(PUCHAR buffer)
 int
 VbusInterfaceOpen(PDEVICE_OBJECT pdo, UINT64 *bh)
 {
-	UNREFERENCED_PARAMETER(pdo);
-	UNREFERENCED_PARAMETER(bh);
+	PPDO_DEVICE_DATA                pd;
+	WDFDEVICE		 	dev;
+	int				rc;
+
+	/* Get the PDO context */
+	dev = WdfWdmDeviceGetWdfDeviceHandle(pdo);
+	pd = PdoGetData(dev);
 	vlog("**** interface open called ****");
-	return 0;
+
+	rc = VbusPciOpen(pd->id, bh);
+
+	return rc;
 }
 
 /*
@@ -59,9 +67,8 @@ VbusInterfaceOpen(PDEVICE_OBJECT pdo, UINT64 *bh)
 void
 VbusInterfaceClose(UINT64 bh)
 {
-	UNREFERENCED_PARAMETER(bh);
 	vlog("**** interface close called ****");
-	return;
+	VbusPciClose(bh);
 }
 
 /*
