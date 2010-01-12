@@ -33,7 +33,7 @@ KSRC=$1
 
 HDRS="shm_signal.h ioq.h vbus_driver.h vbus_pci.h venet.h"
 SRCS="lib/shm_signal.c lib/ioq.c drivers/vbus/bus-proxy.c drivers/vbus/pci-bridge.c drivers/net/vbus-enet.c"
-LOCALS="Makefile.base alacrityvm-drivers.spec"
+LOCALS="Makefile.base alacrityvm-drivers.spec COPYING"
 
 mkdir -p $TMP/linux
 
