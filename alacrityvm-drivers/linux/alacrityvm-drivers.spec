@@ -8,7 +8,7 @@ Release: %{rpmrel}
 Group: System/Kernel
 Source: %{name}-%{version}.tar.gz
 Patch0: vbus-enet.patch
-BuildRoot: %{_tmppath}/%{name}-%{Version}-root
+BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: kernel-source kernel-syms module-init-tools
 %suse_kernel_module_package ec2 xen xenpae vmi um 
 
