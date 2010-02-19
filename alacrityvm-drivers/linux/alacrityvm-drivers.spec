@@ -58,16 +58,11 @@ export INSTALL_MOD_DIR=updates
 for flavor in %flavors_to_build; do 
     make -C /usr/src/linux-obj/%_target_cpu/$flavor modules_install M=$PWD/obj/$flavor 
 done
-mkdir -p $RPM_BUILD_ROOT/%{_docdir}/%{name}
-cp source/COPYING $RPM_BUILD_ROOT/%{_docdir}/%{name}
 
 %post
 /sbin/depmod -a 
 
 %postun
 /sbin/depmod -a
-
-%files
-%{_docdir}/%{name}/* 
 
 %changelog
