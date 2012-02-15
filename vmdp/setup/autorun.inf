@@ -1,6 +1,0 @@
-[autorun]
-open=setup.exe 
-icon=suse.ico
-shell\install=&Install...
-shell\install\command=setup.exe
-;label=SUSE Drivers for Windows on Xen

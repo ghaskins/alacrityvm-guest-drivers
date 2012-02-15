@@ -1,9 +1,0 @@
-SOURCES = init.c \
-          interface.c \
-          miniport.c \
-          oid.c \
-          sendrecv.c \
-	  mp_main6.c \
-	  mp_init6.c \
-	  mp_nic6.c \
-	  xennet.rc

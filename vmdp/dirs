@@ -1,8 +1,0 @@
-DIRS = xenbus \
-       xenblk \
-       xennet \
-       xensvc \
-       pvctrl \
-       setup \
-       mainsetup \
-	   uninstall
